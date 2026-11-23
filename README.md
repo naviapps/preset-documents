@@ -4,9 +4,10 @@ Rust-backed versioned preset documents for Swift, Rust, C and .NET.
 
 Swift sources and tests live in `Sources/` and `Tests/`; Rust crates live in
 `crates/`, with C ABI tests in `crates/ffi/tests/c/`. .NET projects use
-`bindings/dotnet/src/<project>/` and `bindings/dotnet/tests/<project>/` with their
-existing project names. Shared document fixtures live in `fixtures/documents/`,
-distribution fixtures in `fixtures/distribution/`, and native frameworks in `Artifacts/`.
+`bindings/dotnet/src/<project>/` and `bindings/dotnet/tests/<project>/`.
+`fixtures/documents/` contains shared sample documents, `fixtures/consumers/`
+contains independent SDK clients, and `distribution/` contains SDK-specific
+package checks. The native frameworks live in `Artifacts/`.
 
 ## Start here
 
@@ -211,7 +212,7 @@ print(restored.payload.columns)
 ```
 
 Add the `PresetDocumentsFileIO` product to the target only when using file APIs.
-The [external Swift fixture](https://github.com/naviapps/preset-documents/blob/main/fixtures/swift-consumer/Sources/PresetDocumentsConsumer/Consumer.swift)
+The [external Swift fixture](https://github.com/naviapps/preset-documents/blob/main/fixtures/consumers/swift/Sources/PresetDocumentsConsumer/Consumer.swift)
 demonstrates both products in an owned temporary directory.
 
 `PresetFormat` validates both explicit construction and `Codable` decoding through
@@ -243,7 +244,7 @@ retaining a runtime search path to that installed directory. The client needs no
 `crates/ffi/include` directory or Rust toolchain. Retain the original `ThirdParty`
 notices with the payload; Windows DLL/import-library installation is separate.
 
-See the [independent C client](https://github.com/naviapps/preset-documents/blob/main/fixtures/c-consumer/main.c) for codec and file calls
+See the [independent C client](https://github.com/naviapps/preset-documents/blob/main/fixtures/consumers/c/main.c) for codec and file calls
 using only the installed header and framework.
 
 ### .NET
@@ -312,7 +313,7 @@ the public SDK Tooling CLI at the immutable revision in `mise.toml`. Mise and uv
 prepare it without a separate checkout or GitHub credentials.
 
 `make test-consumer` builds and runs the SDK-owned package in
-`fixtures/swift-consumer/` against only installable inputs. It imports both public products,
+`fixtures/consumers/swift/` against only installable inputs. It imports both public products,
 round-trips a document through the native codec, and verifies create-only file
 publication and collision rejection in an owned temporary directory. It uses
 the tracked framework without rebuilding it and isolates the SwiftPM

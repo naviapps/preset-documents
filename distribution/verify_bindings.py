@@ -10,12 +10,12 @@ from pathlib import Path
 from sdk_tooling.adapters import load
 from sdk_tooling.native_plan import builder
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "NaviApps.PresetDocuments"
 
 
 def pack_and_consume(
-    tooling,
+    load_tools,
     dotnet,
     library,
     *,
@@ -28,7 +28,7 @@ def pack_and_consume(
     consumer_runtime=None,
 ):
     filename = "libpreset_documents.dylib" if rid == "osx" else library.name
-    staged = tooling.stage_native(library, output / "native" / rid / filename)
+    staged = load_tools("artifacts").stage_native(library, output / "native" / rid / filename)
     expected_library = library
     if rid == "osx":
         # The framework signature covers its Info.plist and resources. The detached
@@ -49,7 +49,7 @@ def pack_and_consume(
     packages = output / "packages"
     packages.mkdir(parents=True, exist_ok=True)
     project = cwd / "bindings/dotnet/src" / PACKAGE / (PACKAGE + ".csproj")
-    tooling.pack_project(
+    load_tools("dotnet").pack_project(
         dotnet,
         project,
         output=packages,
@@ -67,7 +67,8 @@ def pack_and_consume(
         for path in (cwd / "ThirdParty").rglob("*")
         if path.is_file() and path.name not in (".DS_Store", "registry-notices.json")
     }
-    package_hash = tooling.audit_package(
+    nuget = load_tools("nuget")
+    package_hash = nuget.audit_package(
         package,
         expected_files={"LICENSE": cwd / "LICENSE", "README.md": cwd / "README.md", **notices},
         runtime_files={f"runtimes/{rid}/native/{filename}": expected_library},
@@ -79,11 +80,11 @@ def pack_and_consume(
             "DYLD_FALLBACK_LIBRARY_PATH",
             "DYLD_FRAMEWORK_PATH",
         )
-    tooling.run_isolated_consumer(
+    nuget.run_isolated_consumer(
         dotnet,
         packages=[package],
         references={PACKAGE: version},
-        source=(cwd / "fixtures/dotnet-consumer/Program.cs").read_text(encoding="utf-8"),
+        source=(cwd / "fixtures/consumers/dotnet/Program.cs").read_text(encoding="utf-8"),
         work_parent=output,
         env=env,
         clear_environment=clear_environment,
@@ -95,7 +96,7 @@ def pack_and_consume(
 
 def main():
     if sys.platform != "darwin":
-        raise SystemExit("Run fixtures/distribution/windows.py in the owned Windows worker")
+        raise SystemExit("Run distribution/verify_windows.py in the owned Windows worker")
     dotnet = os.environ.get("DOTNET_BIN") or shutil.which("dotnet")
     if not dotnet:
         raise SystemExit("Set DOTNET_BIN to the task's .NET 10 executable")
@@ -105,8 +106,7 @@ def main():
     native.verify()
     framework_dir = native.artifact / "macos-arm64_x86_64"
     library = framework_dir / (native.module + ".framework") / native.module
-    bindings = load("bindings")
-    bindings.compile_c(
+    load("c_compiler").compile_c(
         ROOT / "crates/ffi/tests/c/abi.c",
         output=output / "abi",
         compiler=["xcrun", "clang"],
@@ -128,7 +128,7 @@ def main():
         DOTNET_CLI_TELEMETRY_OPTOUT="1",
         DOTNET_NOLOGO="1",
     )
-    bindings.run_managed(
+    load("dotnet").run_managed(
         dotnet,
         ROOT / "bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj",
         cwd=ROOT,
@@ -136,7 +136,7 @@ def main():
         verify_style=True,
     )
     pack_and_consume(
-        bindings,
+        load,
         dotnet,
         library,
         rid="osx",

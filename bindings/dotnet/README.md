@@ -122,7 +122,7 @@ The command uses the public SDK Tooling revision pinned in `mise.toml`.
 
 ```powershell
 $env:DOTNET_BIN = 'C:\Program Files\dotnet\x64\dotnet.exe'
-mise run sdk-tooling -- python fixtures/distribution/windows.py
+mise run sdk-tooling -- python distribution/verify_windows.py
 ```
 
 The driver checks the x64 .NET executable and SDK version before building.

@@ -13,9 +13,9 @@ from pathlib import Path
 from sdk_tooling.adapters import load, support_inputs
 from sdk_tooling.native_plan import builder
 
-from fixtures.distribution.bindings import pack_and_consume
+from distribution.verify_bindings import pack_and_consume
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 TARGET = "x86_64-pc-windows-msvc"
 RUNTIME = "win-x64"
 RECEIPT = "preset-documents-windows.json"
@@ -32,7 +32,6 @@ def main(argv=None):
     source = delivery.acceptance_source(ROOT)
     support = support_inputs(ROOT)
     windows = load("windows")
-    bindings = load("bindings")
     artifact_tooling = load("artifacts")
     host = windows.host_architecture()
     env, tools, dotnet = windows.native_environment(host, environment, target_architecture="x64")
@@ -78,8 +77,10 @@ def main(argv=None):
             verified, native_receipt = windows.verify_artifact(native, "x64", environment=env)
             if verified != built or native_receipt.get("toolchain") != toolchain:
                 raise ValueError("Windows x64 library differs from the selected host build")
-            dll = bindings.stage_native(dll, candidate / dll.name)
-            import_library = bindings.stage_native(import_library, candidate / import_library.name)
+            dll = artifact_tooling.stage_native(dll, candidate / dll.name)
+            import_library = artifact_tooling.stage_native(
+                import_library, candidate / import_library.name
+            )
         expected = windows.verify_library(
             dll,
             [ROOT / "crates/ffi/include/preset_documents.h"],
@@ -88,7 +89,7 @@ def main(argv=None):
             env,
             "x64",
         )
-        bindings.compile_c(
+        load("c_compiler").compile_c(
             ROOT / "crates/ffi/tests/c/abi.c",
             output=executable,
             compiler=[tools / "cl.exe"],
@@ -101,7 +102,7 @@ def main(argv=None):
         windows.require_pe_machine(executable, "x64")
         run(executable)
         env["PRESET_DOCUMENTS_NATIVE_LIBRARY"] = str(dll)
-        bindings.run_managed(
+        load("dotnet").run_managed(
             dotnet,
             ROOT / "bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj",
             cwd=ROOT,
@@ -111,7 +112,7 @@ def main(argv=None):
             properties={"UseAppHost": "false"},
         )
         package, package_hash = pack_and_consume(
-            bindings,
+            load,
             dotnet,
             dll,
             rid=RUNTIME,

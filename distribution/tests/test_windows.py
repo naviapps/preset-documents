@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 from sdk_tooling.adapters import load
 
-from fixtures.distribution import windows as driver
+from distribution import verify_windows as driver
 
 
 class WindowsOutputTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class WindowsOutputTests(unittest.TestCase):
                 library.write_bytes(b"fresh SDK DLL")
                 import_library = published / (library.name + ".lib")
                 import_library.write_bytes(b"fresh import library")
-                fixture = root / "fixtures/dotnet-consumer/Program.cs"
+                fixture = root / "fixtures/consumers/dotnet/Program.cs"
                 fixture.parent.mkdir(parents=True)
                 fixture.write_text("using NaviApps.PresetDocuments;", encoding="utf-8")
                 (root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
@@ -73,7 +73,6 @@ class WindowsOutputTests(unittest.TestCase):
 
                 shared.verify_library.side_effect = verify
                 bindings = Mock()
-                artifact_tooling = load("artifacts")
                 package_hash = hashlib.sha256(b"package").hexdigest()
 
                 def pack(dotnet, project, *, output, **options):
@@ -88,10 +87,16 @@ class WindowsOutputTests(unittest.TestCase):
                     return destination
 
                 bindings.stage_native.side_effect = stage_native
+                artifact_tooling = load("artifacts")
+                bindings.build_lock.side_effect = artifact_tooling.build_lock
+                bindings.write_json.side_effect = artifact_tooling.write_json
+                bindings.publish.side_effect = artifact_tooling.publish
                 tools = {
                     "windows": shared,
-                    "bindings": bindings,
-                    "artifacts": artifact_tooling,
+                    "c_compiler": bindings,
+                    "dotnet": bindings,
+                    "nuget": bindings,
+                    "artifacts": bindings,
                     "windows_delivery": load("windows_delivery"),
                     "vm_environment": load("vm_environment"),
                 }
