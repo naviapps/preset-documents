@@ -1,13 +1,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace NaviApps.PresetDocuments;
 
 internal static partial class Native
 {
     private const string Library = "preset_documents";
-    internal static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     [LibraryImport(Library, EntryPoint = "preset_documents_abi_version")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     private static partial uint AbiVersion();
@@ -24,14 +24,16 @@ internal static partial class Native
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     private static partial void Free(IntPtr owner);
 
-    internal static unsafe byte[] Call(uint operation, ReadOnlySpan<byte> data, object? options = null)
+    internal static byte[] Call<T>(uint operation, ReadOnlySpan<byte> data, T options, JsonTypeInfo<T> typeInfo)
+        => Call(operation, data, JsonSerializer.SerializeToUtf8Bytes(options, typeInfo));
+
+    internal static unsafe byte[] Call(uint operation, ReadOnlySpan<byte> data, ReadOnlySpan<byte> options = default)
     {
         RequireMatchingAbi();
-        var config = options is null ? Array.Empty<byte>() : JsonSerializer.SerializeToUtf8Bytes(options, Json);
         IntPtr owner;
         // The native call borrows the spans only until it returns.
-        fixed (byte* input = data, configuration = config)
-            owner = Process(operation, input, (nuint)data.Length, configuration, (nuint)config.Length);
+        fixed (byte* input = data, configuration = options)
+            owner = Process(operation, input, (nuint)data.Length, configuration, (nuint)options.Length);
         return ReadResult(owner);
     }
 

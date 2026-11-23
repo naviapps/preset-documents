@@ -93,12 +93,20 @@ for a collection. Both validate the selected root and return UTF-8 JSON with
 normalized envelopes. Payload lexemes, including number spelling, string escapes
 and internal whitespace, remain exact. Hosts own payload conversion and migration.
 
+The portable format, envelope normalization, metadata timestamp projection and
+file APIs work when `JsonSerializerIsReflectionEnabledByDefault` is disabled.
+With reflection disabled, parse or write the opaque payload using your own
+codec, then normalize the envelope. The generic `Encode<T>`,
+`DecodeDocument<T>` and `DecodeDocuments<T>` helpers use System.Text.Json
+runtime reflection for their typed JSON contracts.
+
 ## Maintainer checks
 
 Run these commands from the SDK root after the
 [maintainer setup](https://github.com/naviapps/preset-documents#development-and-acceptance).
 `mise exec -- make test-bindings` verifies the tracked macOS framework and runs
-C ownership and managed tests, including the clean NuGet consumer. The macOS
+C ownership and managed tests, including clean NuGet consumers for the typed
+codec and for the reflection-disabled format, envelope and file APIs. The macOS
 development package and its receipt are written to `.native-build/packages`.
 The packer stages the verified framework slices as standalone dylibs with their
 own ad hoc signatures. Use this development package only on macOS.

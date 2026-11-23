@@ -61,8 +61,8 @@ public static class PresetDocumentFiles
     /// <summary>Reads an opened regular file within the byte budget.</summary>
     public static async Task<byte[]> ReadAsync(string path, int maximumByteCount = 64 * 1024 * 1024, CancellationToken cancellationToken = default)
     {
-        var options = new { path = Absolute(path), maximumByteCount };
-        return await ObserveAsync(() => Native.Call(5, [], options), cancellationToken).ConfigureAwait(false);
+        var options = new FileOptions(Absolute(path), maximumByteCount);
+        return await ObserveAsync(() => Native.Call(5, [], options, PresetWireJson.Default.FileOptions), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Publishes a complete file at the destination, replacing an existing regular file.</summary>
@@ -78,8 +78,8 @@ public static class PresetDocumentFiles
     /// <remarks>Other platforms and volumes report <see cref="PresetDocumentErrorCode.ApprovedReplacementUnsupported"/>.</remarks>
     public static Task<PresetReplacementRevision> CaptureReplacementAsync(string path, CancellationToken cancellationToken = default)
     {
-        var absolutePath = Absolute(path);
-        return ObserveAsync(() => new PresetReplacementRevision(Native.Call(8, [], new { path = absolutePath })), cancellationToken);
+        var options = new FilePath(Absolute(path));
+        return ObserveAsync(() => new PresetReplacementRevision(Native.Call(8, [], options, PresetWireJson.Default.FilePath)), cancellationToken);
     }
 
     /// <summary>Rechecks an approved file and exchanges it with a complete staged file on macOS APFS.</summary>
@@ -126,7 +126,10 @@ public static class PresetDocumentFiles
         => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     private static PresetDocumentException InvalidReplacementResult()
-        => new(JsonSerializer.SerializeToElement(new { code = "nativeFailure" }));
+    {
+        using var error = JsonDocument.Parse("{\"code\":\"nativeFailure\"}");
+        return new(error.RootElement);
+    }
 
     private static async Task<T> ObserveAsync<T>(Func<T> operation, CancellationToken cancellationToken)
     {
@@ -141,8 +144,9 @@ public static class PresetDocumentFiles
 
     private static Task<byte[]> WriteAsync(uint operation, byte[] data, string path, int maximumByteCount, CancellationToken cancellationToken)
     {
-        var options = new { path = Absolute(path), maximumByteCount };
-        return DispatchWrite(data, maximumByteCount, owned => Native.Call(operation, owned, options), cancellationToken);
+        var options = new FileOptions(Absolute(path), maximumByteCount);
+        return DispatchWrite(data, maximumByteCount,
+            owned => Native.Call(operation, owned, options, PresetWireJson.Default.FileOptions), cancellationToken);
     }
 
     private static Task<T> DispatchWrite<T>(byte[] data, int maximumByteCount, Func<byte[], T> write, CancellationToken cancellationToken)
@@ -156,7 +160,7 @@ public static class PresetDocumentFiles
 
     private static async Task<T> PrepareWriteAsync<T>(byte[] data, int maximumByteCount, Func<byte[], T> write, CancellationToken cancellationToken)
     {
-        _ = Native.Call(10, [], new { byteCount = data.Length, maximumByteCount });
+        _ = Native.Call(10, [], new WriteBudget(data.Length, maximumByteCount), PresetWireJson.Default.WriteBudget);
         cancellationToken.ThrowIfCancellationRequested();
         var owned = data.ToArray();
         // Once dispatched, a write reports its actual native result.

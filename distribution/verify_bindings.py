@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tomllib
 
 from sdk_tooling.adapters import load
 from sdk_tooling.xcframework import xcframework
@@ -13,17 +14,21 @@ from distribution.pack_nuget import MACOS_RUNTIMES, PACKAGE, ROOT, pack
 
 
 def consume(package, *, dotnet, version, root, env, output, exclude_paths, runtime=None):
-    load("nuget").run_isolated_consumer(
-        dotnet,
-        packages=[package],
-        references={PACKAGE: version},
-        source=(root / "fixtures/consumers/dotnet/Program.cs").read_text(encoding="utf-8"),
-        work_parent=output,
-        env=env,
-        exclude_paths=exclude_paths,
-        runtime=runtime,
-        properties={"TreatWarningsAsErrors": "true"},
-    )
+    with (root / "sdk-checks.toml").open("rb") as config:
+        fixtures = tomllib.load(config)["nuget"]["fixtures"]
+    nuget = load("nuget")
+    for fixture in fixtures:
+        nuget.run_isolated_consumer(
+            dotnet,
+            packages=[package],
+            references={PACKAGE: version},
+            source=(root / fixture).read_text(encoding="utf-8"),
+            work_parent=output,
+            env=env,
+            exclude_paths=exclude_paths,
+            runtime=runtime,
+            properties={"TreatWarningsAsErrors": "true"},
+        )
 
 
 def main():

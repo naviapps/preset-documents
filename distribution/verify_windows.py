@@ -137,7 +137,7 @@ def main(argv=None):
                 "Rust document/format/Unicode/limits",
                 "C ownership",
                 ".NET document contracts",
-                "clean NuGet consumer",
+                "clean NuGet consumers with and without JSON reflection",
             ],
             "packages": {package.name: package_hash},
             "dllSha256": dll_hash,

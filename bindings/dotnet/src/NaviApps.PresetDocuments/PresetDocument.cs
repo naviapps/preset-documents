@@ -121,17 +121,14 @@ public sealed record PresetMetadata(string? Id = null, string? Title = null, Dat
         }
     }
 
-    private sealed record TimestampProjection(
-        long UnixSeconds, int Nanoseconds, int OffsetSeconds, bool HasSubnanosecondPrecision);
-
     private static DateTimeOffset? ProjectTimestamp(string? value)
     {
         if (value is null) return null;
         TimestampProjection projection;
         try
         {
-            projection = JsonSerializer.Deserialize<TimestampProjection>(
-                Native.Call(14, Encoding.UTF8.GetBytes(value)), Native.Json)
+            projection = JsonSerializer.Deserialize(
+                Native.Call(14, Encoding.UTF8.GetBytes(value)), PresetWireJson.Default.TimestampProjection)
                 ?? throw new InvalidOperationException("Missing native timestamp projection.");
         }
         catch (PresetDocumentException error) when (error.Code is PresetDocumentErrorCode.InvalidDocument
@@ -176,11 +173,6 @@ public sealed record PresetDocument<T>(PresetFormatVersion FormatVersion, Preset
 /// <summary>The format a host writes and the inclusive range of versions it reads.</summary>
 public sealed class PresetFormat
 {
-    private sealed record Fields(
-        [property: JsonRequired] string Identifier,
-        [property: JsonRequired] long MinimumSupportedVersion,
-        [property: JsonRequired] long CurrentVersion);
-
     /// <summary>The validated dot-separated format identifier.</summary>
     public string Identifier { get; }
     /// <summary>The oldest accepted stored version.</summary>
@@ -189,18 +181,18 @@ public sealed class PresetFormat
     public long CurrentVersion { get; }
     /// <summary>Validates the identifier and version range before creating the format.</summary>
     public PresetFormat(string identifier, long minimumSupportedVersion = 1, long currentVersion = 1)
-        : this(Validate(new Fields(identifier, minimumSupportedVersion, currentVersion))) { }
+        : this(Validate(new FormatFields(identifier, minimumSupportedVersion, currentVersion))) { }
 
-    private PresetFormat(Fields fields)
+    private PresetFormat(FormatFields fields)
     {
         Identifier = fields.Identifier;
         MinimumSupportedVersion = fields.MinimumSupportedVersion;
         CurrentVersion = fields.CurrentVersion;
     }
 
-    private static Fields Validate(Fields fields)
+    private static FormatFields Validate(FormatFields fields)
     {
-        _ = Native.Call(1, JsonSerializer.SerializeToUtf8Bytes(fields, Native.Json));
+        _ = Native.Call(1, JsonSerializer.SerializeToUtf8Bytes(fields, PresetWireJson.Default.FormatFields));
         return fields;
     }
 
@@ -217,13 +209,15 @@ public sealed class PresetFormat
     {
         ArgumentNullException.ThrowIfNull(data);
         var canonical = Native.Call(12, data);
-        var fields = JsonSerializer.Deserialize<Fields>(canonical, Native.Json)
+        var fields = JsonSerializer.Deserialize(canonical, PresetWireJson.Default.FormatFields)
             ?? throw new InvalidOperationException("Missing native format result.");
         return new(fields);
     }
 
     /// <summary>Writes the portable UTF-8 format JSON object for exchange with other bindings.</summary>
-    public byte[] ToJson() => Native.Call(12, JsonSerializer.SerializeToUtf8Bytes(this, Native.Json));
+    public byte[] ToJson() => Native.Call(12, JsonSerializer.SerializeToUtf8Bytes(ToWireFormat(), PresetWireJson.Default.FormatFields));
+
+    internal FormatFields ToWireFormat() => new(Identifier, MinimumSupportedVersion, CurrentVersion);
 
     /// <summary>Wraps a payload in a document using the current format version.</summary>
     public PresetDocument<T> MakeDocument<T>(T payload, PresetMetadata? metadata = null) =>
@@ -286,14 +280,19 @@ public static class PresetJsonCodec
     public static PresetDocument<T> DecodeDocument<T>(byte[] data, PresetFormat format, PresetDocumentLimits? limits = null) => DecodeValue<PresetDocument<T>>(data, format, "document", limits);
     /// <summary>Validates and decodes a document collection against the expected format.</summary>
     public static IReadOnlyList<PresetDocument<T>> DecodeDocuments<T>(byte[] data, PresetFormat format, PresetDocumentLimits? limits = null) => DecodeValue<PresetDocument<T>[]>(data, format, "collection", limits);
-    private static JsonSerializerOptions DocumentJson(int maximumDepth) => new(Native.Json) { MaxDepth = maximumDepth };
+    private static JsonSerializerOptions DocumentJson(int maximumDepth) => new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        MaxDepth = maximumDepth
+    };
+
     private static byte[] EncodeValue<T>(T value, string root, PresetDocumentLimits? limits, Func<int>? documentCount = null)
     {
         limits ??= new();
-        var options = new { format = (PresetFormat?)null, limits, root };
-        _ = Native.Call(4, JsonSerializer.SerializeToUtf8Bytes(limits, Native.Json));
+        var options = new EnvelopeOptions(null, limits, root);
+        _ = Native.Call(4, JsonSerializer.SerializeToUtf8Bytes(limits, PresetWireJson.Default.PresetDocumentLimits));
         if (documentCount is not null)
-            _ = Native.Call(13, JsonSerializer.SerializeToUtf8Bytes(new { limits, documentCount = documentCount() }, Native.Json));
+            _ = Native.Call(13, JsonSerializer.SerializeToUtf8Bytes(new CollectionCount(limits, documentCount()), PresetWireJson.Default.CollectionCount));
         // Allow the first excess level to reach Rust, including when a deeper
         // graph makes managed serialization stop. This is not a native limit.
         int transportDepth = (int)Math.Clamp((long)limits.MaximumDepth + 1, 1, int.MaxValue);
@@ -309,14 +308,14 @@ public static class PresetJsonCodec
         {
             writer.Flush();
             // The incomplete prefix retains its original transport byte count.
-            try { _ = Native.Call(3, output.WrittenSpan, options); }
+            try { _ = Native.Call(3, output.WrittenSpan, options, PresetWireJson.Default.EnvelopeOptions); }
             catch (PresetDocumentException error) when (error.Code == PresetDocumentErrorCode.InvalidDocument) { }
             // An incomplete prefix alone is not a document error. Preserve the
             // host serializer failure unless Rust identifies a limit/configuration error.
             throw;
         }
         writer.Flush();
-        return Native.Call(11, output.WrittenSpan, options);
+        return Native.Call(11, output.WrittenSpan, options, PresetWireJson.Default.EnvelopeOptions);
     }
     private static T DecodeValue<T>(byte[] input, PresetFormat format, string root, PresetDocumentLimits? limits)
     {
@@ -330,7 +329,7 @@ public static class PresetJsonCodec
     }
 
     private static byte[] NormalizeEnvelopes(byte[] data, PresetFormat format, string root, PresetDocumentLimits? limits)
-        => Native.Call(2, data, new { format, limits = limits ?? new(), root });
+        => Native.Call(2, data, new EnvelopeOptions(format?.ToWireFormat(), limits ?? new(), root), PresetWireJson.Default.EnvelopeOptions);
 
     private static PresetDocumentException InvalidDocument()
     {

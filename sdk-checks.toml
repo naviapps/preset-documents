@@ -20,5 +20,8 @@ projects = ["bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.c
 
 [nuget]
 package_id = "NaviApps.PresetDocuments"
-fixtures = ["fixtures/consumers/dotnet/Program.cs"]
+fixtures = [
+  "fixtures/consumers/dotnet/Program.cs",
+  "fixtures/consumers/dotnet/ReflectionDisabled.cs",
+]
 windows_x64 = true

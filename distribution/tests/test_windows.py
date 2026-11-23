@@ -42,6 +42,9 @@ class WindowsOutputTests(unittest.TestCase):
                 fixture = root / "fixtures/consumers/dotnet/Program.cs"
                 fixture.parent.mkdir(parents=True)
                 fixture.write_text("using NaviApps.PresetDocuments;", encoding="utf-8")
+                reflection_disabled = fixture.with_name("ReflectionDisabled.cs")
+                reflection_disabled.write_text("using System.Text.Json;", encoding="utf-8")
+                shutil.copyfile(driver.ROOT / "sdk-checks.toml", root / "sdk-checks.toml")
                 (root / "global.json").write_text(
                     '{"sdk":{"version":"10.0.403","rollForward":"disable"}}'
                 )
@@ -226,15 +229,24 @@ class WindowsOutputTests(unittest.TestCase):
                     bindings.pack_native.call_args.kwargs["environment"]["DOTNET_BIN"],
                     str(dotnet),
                 )
-                consumer = bindings.run_isolated_consumer.call_args.kwargs
-                self.assertEqual(bindings.run_isolated_consumer.call_args.args[0], dotnet)
-                self.assertEqual(consumer["runtime"], rid)
-                self.assertTrue(
-                    any(verified_library.is_relative_to(path) for path in consumer["exclude_paths"])
-                )
-                self.assertIn(published, consumer["exclude_paths"])
-                self.assertFalse(consumer.get("clear_environment"))
-                self.assertEqual(consumer["source"], fixture.read_text(encoding="utf-8"))
+                self.assertEqual(bindings.run_isolated_consumer.call_count, 2)
+                for call, source in zip(
+                    bindings.run_isolated_consumer.call_args_list,
+                    (fixture, reflection_disabled),
+                    strict=True,
+                ):
+                    consumer = call.kwargs
+                    self.assertEqual(call.args[0], dotnet)
+                    self.assertEqual(consumer["runtime"], rid)
+                    self.assertTrue(
+                        any(
+                            verified_library.is_relative_to(path)
+                            for path in consumer["exclude_paths"]
+                        )
+                    )
+                    self.assertIn(published, consumer["exclude_paths"])
+                    self.assertFalse(consumer.get("clear_environment"))
+                    self.assertEqual(consumer["source"], source.read_text(encoding="utf-8"))
                 evidence = artifacts / rid / native.version
                 receipt = json.loads((evidence / driver.RECEIPT).read_bytes())
                 self.assertEqual(receipt["target"], target)
