@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -9,16 +8,6 @@ internal static class Native
 {
     private const string Library = "preset_documents";
     internal static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-    static Native() => NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, Resolve);
-    private static IntPtr Resolve(string name, Assembly assembly, DllImportSearchPath? search)
-    {
-        if (name != Library) return IntPtr.Zero;
-        var explicitPath = Environment.GetEnvironmentVariable("PRESET_DOCUMENTS_NATIVE_LIBRARY");
-        if (explicitPath is not null) return NativeLibrary.Load(explicitPath);
-        string file = OperatingSystem.IsWindows() ? Library + ".dll" : "lib" + Library + ".dylib";
-        string packaged = Path.Combine(AppContext.BaseDirectory, "runtimes", RuntimeInformation.RuntimeIdentifier, "native", file);
-        return File.Exists(packaged) ? NativeLibrary.Load(packaged) : NativeLibrary.Load(file, assembly, search);
-    }
     [DllImport(Library, EntryPoint = "preset_documents_abi_version", CallingConvention = CallingConvention.Cdecl)]
     private static extern uint AbiVersion();
     [DllImport(Library, EntryPoint = "preset_documents_process", CallingConvention = CallingConvention.Cdecl)]

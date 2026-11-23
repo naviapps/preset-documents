@@ -15,7 +15,12 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../../../LICENSE" Pack="true" PackagePath="/" />
-    <None Include="$(PresetDocumentsNativeLibrary)" Condition="'$(PresetDocumentsNativeLibrary)' != ''" Pack="true" PackagePath="runtimes/$(PresetDocumentsRuntimeIdentifier)/native/%(Filename)%(Extension)" />
+    <None Include="$(PresetDocumentsNativeLibrary)" Condition="'$(PresetDocumentsNativeLibrary)' != ''"
+          CopyToOutputDirectory="Always" Pack="true"
+          PackagePath="runtimes/$(PresetDocumentsRuntimeIdentifier)/native/%(Filename)%(Extension)">
+      <Link Condition="'$(OS)' == 'Windows_NT'">preset_documents.dll</Link>
+      <Link Condition="'$(OS)' != 'Windows_NT'">libpreset_documents.dylib</Link>
+    </None>
     <None Include="../../../../README.md" Pack="true" PackagePath="/README.md" />
     <None Include="../../../../ThirdParty/**/*" Exclude="../../../../ThirdParty/**/.DS_Store;../../../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
   </ItemGroup>

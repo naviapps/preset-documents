@@ -35,8 +35,8 @@ docs:
 	$(SDK_TOOLING) docs
 
 test-managed:
-	PRESET_DOCUMENTS_NATIVE_LIBRARY="$(CURDIR)/Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/CPresetDocuments" \
-		dotnet run --configuration Release --project bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj
+	dotnet run --configuration Release --project bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj \
+		-p:PresetDocumentsNativeLibrary="$(CURDIR)/Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/CPresetDocuments"
 
 clean:
 	$(SDK_TOOLING) clean target .build .native-build \

@@ -10,6 +10,7 @@ from itertools import product
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from sdk_tooling import windows_delivery
 from sdk_tooling.adapters import load
 
 from distribution import verify_windows as driver
@@ -21,7 +22,7 @@ class WindowsOutputTests(unittest.TestCase):
         rid = "win-x64"
         hosts = {"arm64": "aarch64-pc-windows-msvc", "x64": target}
         for host, error, stale in product(
-            hosts, (None, "receipt", "C machine", "support"), (False, True)
+            hosts, (None, "receipt", "digest", "C machine", "support"), (False, True)
         ):
             with (
                 self.subTest(host=host, error=error, stale_legacy_output=stale),
@@ -49,7 +50,7 @@ class WindowsOutputTests(unittest.TestCase):
                     "PATH": "owned-toolchain",
                 }
                 dotnet = root / "dotnet-x64/dotnet.exe"
-                native = Mock(version="0.1.0")
+                native = Mock(version="0.1.0", library="preset_documents")
                 shared = Mock()
                 shared.host_architecture.return_value = host
                 shared.MSVC_TARGETS = hosts
@@ -62,7 +63,13 @@ class WindowsOutputTests(unittest.TestCase):
                 }
                 shared.verify_artifact.return_value = (
                     published,
-                    {"toolchain": {} if error == "receipt" else toolchain},
+                    {
+                        "toolchain": {} if error == "receipt" else toolchain,
+                        "outputs": {
+                            path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                            for path in (library, import_library)
+                        },
+                    },
                 )
                 if error == "C machine":
                     shared.require_pe_machine.side_effect = ValueError("wrong C fixture machine")
@@ -84,11 +91,15 @@ class WindowsOutputTests(unittest.TestCase):
                 def stage_native(source, destination):
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(source, destination)
+                    if error == "digest" and source == library:
+                        destination.write_bytes(b"unverified library")
                     return destination
 
                 bindings.stage_native.side_effect = stage_native
                 artifact_tooling = load("artifacts")
                 bindings.build_lock.side_effect = artifact_tooling.build_lock
+                bindings.hashes.side_effect = artifact_tooling.hashes
+                bindings.file_sha256.side_effect = artifact_tooling.file_sha256
                 bindings.write_json.side_effect = artifact_tooling.write_json
                 bindings.publish.side_effect = artifact_tooling.publish
                 tools = {
@@ -97,7 +108,6 @@ class WindowsOutputTests(unittest.TestCase):
                     "dotnet": bindings,
                     "nuget": bindings,
                     "artifacts": bindings,
-                    "windows_delivery": load("windows_delivery"),
                     "vm_environment": load("vm_environment"),
                 }
                 support = {"@sdk-tooling/sdk_tooling/windows.py": "b" * 64}
@@ -117,17 +127,21 @@ class WindowsOutputTests(unittest.TestCase):
                     patch.object(driver, "ffi_product", return_value=native) as builder,
                     patch.object(driver, "load", side_effect=tools.__getitem__),
                     patch.object(driver, "support_inputs", side_effect=(support, after)),
-                    patch.object(
-                        tools["windows_delivery"], "acceptance_source", return_value=workspace
+                    patch.object(windows_delivery, "acceptance_source", return_value=workspace),
+                    patch.multiple(
+                        windows_delivery, windows=shared, artifacts=bindings, c_compiler=bindings
                     ),
-                    patch.object(driver.subprocess, "run") as commands,
-                    patch.object(driver.subprocess, "check_output", return_value="10.0.403"),
+                    patch.object(windows_delivery.subprocess, "run") as commands,
+                    patch.object(
+                        windows_delivery.subprocess, "check_output", return_value="10.0.403"
+                    ),
                     patch.object(driver.platform, "platform", return_value="mock Windows"),
                     patch("builtins.print"),
                 ):
                     if error:
                         messages = {
                             "receipt": "library differs from the selected host build",
+                            "digest": "Staged DLL or import library differs from its verified receipt",
                             "C machine": "wrong C fixture machine",
                             "support": "acceptance support files changed",
                         }
@@ -186,11 +200,10 @@ class WindowsOutputTests(unittest.TestCase):
                 self.assertEqual(bindings.stage_native.call_args.args[0], verified_library)
                 managed = bindings.run_managed.call_args.kwargs
                 self.assertEqual(bindings.run_managed.call_args.args[0], dotnet)
-                self.assertEqual(
-                    managed["env"]["PRESET_DOCUMENTS_NATIVE_LIBRARY"], str(verified_library)
-                )
                 self.assertEqual(managed["runtime"], rid)
-                self.assertEqual(managed["properties"], {"UseAppHost": "false"})
+                self.assertEqual(
+                    managed["properties"], {"PresetDocumentsNativeLibrary": str(verified_library)}
+                )
                 self.assertEqual(
                     bindings.pack_project.call_args.kwargs["properties"],
                     {
@@ -212,9 +225,7 @@ class WindowsOutputTests(unittest.TestCase):
                     any(verified_library.is_relative_to(path) for path in consumer["exclude_paths"])
                 )
                 self.assertIn(published, consumer["exclude_paths"])
-                self.assertEqual(
-                    consumer["clear_environment"], ("PRESET_DOCUMENTS_NATIVE_LIBRARY",)
-                )
+                self.assertFalse(consumer.get("clear_environment"))
                 self.assertEqual(consumer["source"], fixture.read_text(encoding="utf-8"))
                 evidence = artifacts / rid / native.version
                 receipt = json.loads((evidence / driver.RECEIPT).read_bytes())
@@ -256,14 +267,13 @@ class WindowsOutputTests(unittest.TestCase):
             (root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
             with (
                 patch.object(driver, "ROOT", root),
-                patch.object(
-                    driver,
-                    "load",
-                    side_effect=lambda name: load(name) if name == "vm_environment" else shared,
-                ),
-                patch.object(driver.subprocess, "check_output", return_value="10.0.402"),
-                patch.object(driver.subprocess, "run") as run,
+                patch.object(windows_delivery, "acceptance_source", return_value=("a" * 40, None)),
+                patch.object(windows_delivery, "windows", shared),
+                patch.object(windows_delivery.subprocess, "check_output", return_value="10.0.402"),
+                patch.object(windows_delivery.subprocess, "run") as run,
             ):
+                shared.host_architecture.return_value = "x64"
+                shared.MSVC_TARGETS = {"x64": windows_delivery.TARGET}
                 shared.native_environment.return_value = ({}, root / "MSVC", root / "dotnet.exe")
                 with self.assertRaisesRegex(ValueError, "pinned x64 .NET SDK"):
                     driver.main([])

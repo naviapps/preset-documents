@@ -73,9 +73,9 @@ def pack_and_consume(
         expected_files={"LICENSE": cwd / "LICENSE", "README.md": cwd / "README.md", **notices},
         runtime_files={f"runtimes/{rid}/native/{filename}": expected_library},
     )
-    clear_environment = ("PRESET_DOCUMENTS_NATIVE_LIBRARY",)
+    clear_environment = ()
     if rid == "osx":
-        clear_environment += (
+        clear_environment = (
             "DYLD_LIBRARY_PATH",
             "DYLD_FALLBACK_LIBRARY_PATH",
             "DYLD_FRAMEWORK_PATH",
@@ -124,7 +124,6 @@ def main():
     subprocess.run([str(output / "abi")], cwd=ROOT, check=True)
     env = dict(
         os.environ,
-        PRESET_DOCUMENTS_NATIVE_LIBRARY=str(library),
         DOTNET_CLI_TELEMETRY_OPTOUT="1",
         DOTNET_NOLOGO="1",
     )
@@ -133,6 +132,7 @@ def main():
         ROOT / "bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj",
         cwd=ROOT,
         env=env,
+        properties={"PresetDocumentsNativeLibrary": str(library)},
         verify_style=True,
     )
     pack_and_consume(
