@@ -249,14 +249,14 @@ public static class PresetJsonCodec
         {
             writer.Flush();
             // The incomplete prefix retains its original transport byte count.
-            try { _ = Native.CallWritten(3, output, options); }
+            try { _ = Native.Call(3, output.WrittenSpan, options); }
             catch (PresetDocumentException error) when (error.Code == PresetDocumentErrorCode.InvalidDocument) { }
             // An incomplete prefix alone is not a document error. Preserve the
             // host serializer failure unless Rust identifies a limit/configuration error.
             throw;
         }
         writer.Flush();
-        return Native.CallWritten(11, output, options);
+        return Native.Call(11, output.WrittenSpan, options);
     }
     private static T DecodeValue<T>(byte[] input, PresetFormat format, string root, PresetDocumentLimits? limits)
     {

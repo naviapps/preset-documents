@@ -10,4 +10,4 @@ Use English documentation/comments. Keep `make check` and public GitHub-hosted C
 usable from a fresh SDK clone with the public SDK Tooling pin in `mise.toml`. Follow the
 [distribution checks](README.md#distribution-checks) for release verification.
 Human QA/data and existing VM/security/sharing settings are protected. Read
-README.md and the affected API catalog before changing a contract.
+README.md and the affected public API comments before changing a contract.

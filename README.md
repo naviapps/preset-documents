@@ -12,8 +12,7 @@ package checks. The native frameworks live in `Artifacts/`.
 ## Start here
 
 - [Swift, Rust and C installation](#packages) and [the .NET guide](https://github.com/naviapps/preset-documents/blob/main/bindings/dotnet/README.md).
-- Swift API catalogs: [codec](https://github.com/naviapps/preset-documents/blob/main/Sources/PresetDocuments/PresetDocuments.docc/PresetDocuments.md)
-  and [file I/O](https://github.com/naviapps/preset-documents/blob/main/Sources/PresetDocumentsFileIO/PresetDocumentsFileIO.docc/PresetDocumentsFileIO.md).
+- Swift API examples: [codec](#swift) and [file I/O](#optional-file-io).
 - [Maintainer setup and acceptance](#development-and-acceptance).
 
 Swift products require Swift 6.3 and macOS 26 or later; the tracked framework
@@ -160,6 +159,20 @@ reports its last observed directory location. Reveal the recovery directory to
 the user; do not automatically open, remove or restore the displaced item.
 The retained entry is not an immutable copy, and these results do not promise
 power-loss durability.
+
+```swift
+import Foundation
+import PresetDocumentsFileIO
+
+func exportReplacingApprovedFile(
+  _ data: Data, at destination: URL,
+  confirm: (URL) async -> Bool
+) async throws -> PresetReplacementOutcome? {
+  let revision = try await PresetDocumentFiles.captureReplacement(at: destination)
+  guard await confirm(destination) else { return nil }
+  return try await PresetDocumentFiles.replaceApproved(revision, with: data)
+}
+```
 
 ## Packages
 
@@ -328,7 +341,7 @@ tests and exercises the .NET binding against a source-built DLL.
 Run `mise exec -- make check-distribution` from a clean, committed SDK checkout.
 Mise and uv select the public SDK Tooling revision pinned in `mise.toml`.
 This checks the C and .NET bindings, the isolated NuGet consumer, the installed
-Rust and C clients, both DocC catalogs and the portable build-driver tests. The
+Rust and C clients, and the portable build-driver tests. The
 shared tools verify the tracked framework's source and output hashes and C exports.
 `native.toml` declares the framework build and its receipt inputs. Rebuild the
 framework with `mise exec -- make native` after changing native inputs.

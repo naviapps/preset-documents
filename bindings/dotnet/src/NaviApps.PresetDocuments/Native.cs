@@ -1,39 +1,34 @@
-using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
 namespace NaviApps.PresetDocuments;
 
-internal static class Native
+internal static partial class Native
 {
     private const string Library = "preset_documents";
     internal static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-    [DllImport(Library, EntryPoint = "preset_documents_abi_version", CallingConvention = CallingConvention.Cdecl)]
-    private static extern uint AbiVersion();
-    [DllImport(Library, EntryPoint = "preset_documents_process", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr Process(uint operation, byte[] data, nuint size, byte[] options, nuint optionsSize);
-    [DllImport(Library, EntryPoint = "preset_documents_buffer_data", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr Data(IntPtr owner, out nuint size, out uint status);
-    [DllImport(Library, EntryPoint = "preset_documents_buffer_free", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void Free(IntPtr owner);
+    [LibraryImport(Library, EntryPoint = "preset_documents_abi_version")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    private static partial uint AbiVersion();
+    [LibraryImport(Library, EntryPoint = "preset_documents_process")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    private static unsafe partial IntPtr Process(uint operation, byte* data, nuint size, byte* options, nuint optionsSize);
+    [LibraryImport(Library, EntryPoint = "preset_documents_buffer_data")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    private static partial IntPtr Data(IntPtr owner, out nuint size, out uint status);
+    [LibraryImport(Library, EntryPoint = "preset_documents_buffer_free")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    private static partial void Free(IntPtr owner);
 
-    internal static byte[] Call(uint operation, byte[] data, object? options = null)
-        => Call(operation, data, data.Length, options);
-
-    internal static byte[] CallWritten(uint operation, ArrayBufferWriter<byte> writer, object options)
-    {
-        // The synchronous native call reads only the written prefix, never the spare capacity.
-        if (MemoryMarshal.TryGetArray(writer.WrittenMemory, out var segment)
-            && segment.Offset == 0 && segment.Array is { } buffer)
-            return Call(operation, buffer, segment.Count, options);
-        return Call(operation, writer.WrittenSpan.ToArray(), options);
-    }
-
-    private static byte[] Call(uint operation, byte[] data, int length, object? options)
+    internal static unsafe byte[] Call(uint operation, ReadOnlySpan<byte> data, object? options = null)
     {
         if (AbiVersion() != 1) throw new InvalidOperationException("Native preset ABI mismatch.");
         var config = options is null ? Array.Empty<byte>() : JsonSerializer.SerializeToUtf8Bytes(options, Json);
-        var owner = Process(operation, data, (nuint)length, config, (nuint)config.Length);
+        IntPtr owner;
+        // The native call borrows the spans only until it returns.
+        fixed (byte* input = data, configuration = config)
+            owner = Process(operation, input, (nuint)data.Length, configuration, (nuint)config.Length);
         if (owner == IntPtr.Zero) throw new InvalidOperationException("Missing native result.");
         try
         {

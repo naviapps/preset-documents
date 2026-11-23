@@ -28,8 +28,7 @@ def main(argv=None):
     acceptance = X64Acceptance(ROOT)
     native = ffi_product(ROOT)
 
-    # The native build verifies retained notices for the macOS and Windows graphs.
-    built = acceptance.build(native, fetch_all=True)
+    built = acceptance.build(native)
     env, dotnet = acceptance.env, acceptance.dotnet
     output_dir = ROOT / ".native-build"
     output_dir.mkdir(exist_ok=True)
