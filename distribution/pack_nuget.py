@@ -16,16 +16,10 @@ MACOS_RUNTIMES = ("osx-arm64", "osx-x64")
 
 def pack(native, runtimes, *, environment=None):
     root = native.root
-    notices = root / "ThirdParty"
+    nuget = load("nuget")
     package_files = {"LICENSE": root / "LICENSE", "README.md": root / "README.md"}
-    package_files.update(
-        {
-            "licenses/" + path.relative_to(notices).as_posix(): path
-            for path in load("artifacts").files(notices)
-            if path.name not in (".DS_Store", "registry-notices.json")
-        }
-    )
-    return load("nuget").pack_native(
+    package_files.update(nuget.retained_notice_files(root / "ThirdParty", "licenses"))
+    return nuget.pack_native(
         native,
         project=root / "bindings/dotnet/src" / PACKAGE / (PACKAGE + ".csproj"),
         package_files=package_files,

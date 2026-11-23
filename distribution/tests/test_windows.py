@@ -101,6 +101,7 @@ class WindowsOutputTests(unittest.TestCase):
                     return package
 
                 bindings.pack_native.side_effect = pack
+                bindings.retained_notice_files.side_effect = load("nuget").retained_notice_files
 
                 def stage_native(source, destination):
                     destination.parent.mkdir(parents=True, exist_ok=True)
