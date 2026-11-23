@@ -93,6 +93,16 @@ struct PresetDocumentsConsumer {
     try manager.createDirectory(at: directory, withIntermediateDirectories: false)
     defer { try? manager.removeItem(at: directory) }
     let destination = directory.appendingPathComponent("日本語.preset")
+    do {
+      try await PresetDocumentFiles.writeNew(
+        encoded, to: destination, maximumByteCount: encoded.count - 1)
+      throw AcceptanceFailure(message: "The installed file adapter allowed an oversized write")
+    } catch let error as PresetDocumentError {
+      try require(
+        error == .outputTooLarge(byteCount: encoded.count, maximumByteCount: encoded.count - 1),
+        "The oversized write did not report the submitted size and budget")
+    }
+    try require(!manager.fileExists(atPath: destination.path), "A refused write created a file")
     try await PresetDocumentFiles.writeNew(
       encoded, to: destination, maximumByteCount: limits.maximumByteCount)
     let saved = try await PresetDocumentFiles.read(
@@ -119,6 +129,24 @@ struct PresetDocumentsConsumer {
     try require(
       entries == [atomicDestination.lastPathComponent, destination.lastPathComponent].sorted(),
       "The file adapter left staged files")
-    print("Standalone PresetDocuments and PresetDocumentsFileIO acceptance passed.")
+
+    let approval: PresetReplacementRevision
+    do {
+      approval = try await PresetDocumentFiles.captureReplacement(at: destination)
+    } catch PresetDocumentError.approvedReplacementUnsupported {
+      print("Standalone Swift consumer passed. Approved replacement reported unsupported.")
+      return
+    }
+    let replacement = try PresetJSONCodec.encode(format.makeDocument(payload: UInt64(42)))
+    let outcome = try await PresetDocumentFiles.replaceApproved(approval, with: replacement)
+    guard case .committed(_, .matchesApprovedFile) = outcome else {
+      throw AcceptanceFailure(message: "Expected a committed exchange retaining the approved item")
+    }
+    let displaced = try await PresetDocumentFiles.read(from: outcome.displacedPresetURL)
+    let committed = try await PresetDocumentFiles.read(from: destination)
+    try require(
+      displaced == encoded && committed == replacement,
+      "The installed replacement adapter lost the retained or committed bytes")
+    print("Standalone Swift consumer passed, including approved replacement recovery.")
   }
 }

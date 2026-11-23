@@ -10,6 +10,8 @@
     <Description>Rust-backed versioned preset documents, validation and portable JSON codecs.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable Condition="'$(SdkNativeRuntimeAssets)' == ''">false</IsPackable>
     <PublishRepositoryUrl>false</PublishRepositoryUrl>
     <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
@@ -17,18 +19,15 @@
   <ItemGroup>
     <None Include="../../../../LICENSE" Pack="true" PackagePath="/" />
     <None Include="$(PresetDocumentsNativeLibrary)" Condition="'$(PresetDocumentsNativeLibrary)' != ''"
-          CopyToOutputDirectory="Always" Pack="true"
-          PackagePath="runtimes/$(PresetDocumentsRuntimeIdentifier)/native/%(Filename)%(Extension)">
+          CopyToOutputDirectory="Always">
       <Link Condition="'$(OS)' == 'Windows_NT'">preset_documents.dll</Link>
       <Link Condition="'$(OS)' != 'Windows_NT'">libpreset_documents.dylib</Link>
     </None>
     <None Include="../../../../README.md" Pack="true" PackagePath="/README.md" />
     <None Include="../../../../ThirdParty/**/*" Exclude="../../../../ThirdParty/**/.DS_Store;../../../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
+    <None Include="$(SdkNativeRuntimeAssets)/**/*" Condition="'$(SdkNativeRuntimeAssets)' != ''"
+          Pack="true" PackagePath="runtimes/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
-  <Target Name="RequirePresetDocumentsNativeLibrary" BeforeTargets="GenerateNuspec">
-    <Error Condition="'$(PresetDocumentsRuntimeIdentifier)' == '' or '$(PresetDocumentsNativeLibrary)' == ''" Text="Follow the package acceptance instructions in bindings/dotnet/README.md to supply a source-built native library." />
-    <Error Condition="'$(PresetDocumentsRuntimeIdentifier)' != 'osx' and '$(PresetDocumentsRuntimeIdentifier)' != 'win-x64'" Text="PresetDocuments package production supports osx and win-x64." />
-  </Target>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <PathMap>$(MSBuildProjectDirectory)=/preset-documents/dotnet/$(MSBuildProjectName)</PathMap>
   </PropertyGroup>

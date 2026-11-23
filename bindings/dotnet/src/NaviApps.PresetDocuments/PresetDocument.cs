@@ -11,16 +11,45 @@ using System.Text.Unicode;
 
 namespace NaviApps.PresetDocuments;
 
+/// <summary>The reason a codec or file operation was refused or failed.</summary>
 public enum PresetDocumentErrorCode
 {
-    InvalidConfiguration, InvalidDocument, FormatMismatch, UnsupportedFormatVersion,
-    InputTooLarge, OutputTooLarge, TooManyDocuments, NestingTooDeep, FileAccess, NativeFailure,
-    DestinationAlreadyExists, AtomicNewUnsupported, DestinationChanged, ApprovedReplacementUnsupported
+    /// <summary>The format, operation options, or limits are invalid.</summary>
+    InvalidConfiguration,
+    /// <summary>The document's envelope, Unicode, or metadata is invalid.</summary>
+    InvalidDocument,
+    /// <summary>The stored format identifier differs from the requested format.</summary>
+    FormatMismatch,
+    /// <summary>The stored version is outside the supported range.</summary>
+    UnsupportedFormatVersion,
+    /// <summary>The received bytes exceed the input budget.</summary>
+    InputTooLarge,
+    /// <summary>The produced or submitted bytes exceed the output budget.</summary>
+    OutputTooLarge,
+    /// <summary>The collection exceeds the configured document count.</summary>
+    TooManyDocuments,
+    /// <summary>The JSON nesting exceeds the configured depth.</summary>
+    NestingTooDeep,
+    /// <summary>The file adapter could not perform the requested access.</summary>
+    FileAccess,
+    /// <summary>The native operation did not return a recognized result.</summary>
+    NativeFailure,
+    /// <summary>The create-only destination is already occupied.</summary>
+    DestinationAlreadyExists,
+    /// <summary>The destination cannot atomically publish a new entry without replacement.</summary>
+    AtomicNewUnsupported,
+    /// <summary>The observed destination changed after capture.</summary>
+    DestinationChanged,
+    /// <summary>The destination does not support approved replacement.</summary>
+    ApprovedReplacementUnsupported
 }
 
+/// <summary>A typed failure reported by the native preset contract.</summary>
 public sealed class PresetDocumentException : Exception
 {
+    /// <summary>The stable error category.</summary>
     public PresetDocumentErrorCode Code { get; }
+    /// <summary>The structured fields supplied for this native error.</summary>
     public JsonElement Details { get; }
     internal PresetDocumentException(JsonElement error) : base(error.ToString())
     {
@@ -45,7 +74,16 @@ public sealed class PresetDocumentException : Exception
     }
 }
 
+/// <summary>The document's format identity and version.</summary>
+/// <param name="Identifier">The format identifier.</param>
+/// <param name="Version">The version written by the exporting host.</param>
 public sealed record PresetFormatVersion(string Identifier, long Version);
+
+/// <summary>Optional metadata carried alongside the host's payload.</summary>
+/// <param name="Id">An optional host-supplied identifier without storage semantics.</param>
+/// <param name="Title">The display title supplied by the host.</param>
+/// <param name="CreatedAt">A creation timestamp within the range representable by .NET.</param>
+/// <param name="ProducerVersion">The exporting host's version, when supplied.</param>
 public sealed record PresetMetadata(string? Id = null, string? Title = null, DateTimeOffset? CreatedAt = null, string? ProducerVersion = null)
 {
     private const string TimestampFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF";
@@ -54,6 +92,7 @@ public sealed record PresetMetadata(string? Id = null, string? Title = null, Dat
     private readonly DateTimeOffset? _createdAt = CreatedAt;
     private readonly string? _createdAtText;
 
+    /// <summary>Creates empty metadata.</summary>
     [JsonConstructor]
     public PresetMetadata() : this(Id: null) { }
 
@@ -121,9 +160,20 @@ public sealed record PresetMetadata(string? Id = null, string? Title = null, Dat
         ? date.ToString(date.Offset == TimeSpan.Zero ? UtcFormat : OffsetFormat, CultureInfo.InvariantCulture)
         : null;
 }
+/// <summary>Bounds for reading and writing document envelopes.</summary>
+/// <param name="MaximumByteCount">The separate maximum for input and output bytes.</param>
+/// <param name="MaximumDocumentCount">The maximum number of documents in a collection.</param>
+/// <param name="MaximumDepth">The maximum JSON depth, including the envelope and collection root.</param>
 public sealed record PresetDocumentLimits(int MaximumByteCount = 16 * 1024 * 1024, int MaximumDocumentCount = 65_536, int MaximumDepth = 128);
+
+/// <summary>A versioned envelope carrying a host-owned payload.</summary>
+/// <typeparam name="T">The payload type chosen by the host.</typeparam>
+/// <param name="FormatVersion">The stored format identity and version.</param>
+/// <param name="Metadata">Optional document metadata, represented by an empty instance when absent.</param>
+/// <param name="Payload">The value managed by the host's payload codec.</param>
 public sealed record PresetDocument<T>(PresetFormatVersion FormatVersion, PresetMetadata Metadata, T Payload);
 
+/// <summary>The format a host writes and the inclusive range of versions it reads.</summary>
 public sealed class PresetFormat
 {
     private sealed record Fields(
@@ -131,9 +181,13 @@ public sealed class PresetFormat
         [property: JsonRequired] long MinimumSupportedVersion,
         [property: JsonRequired] long CurrentVersion);
 
+    /// <summary>The validated dot-separated format identifier.</summary>
     public string Identifier { get; }
+    /// <summary>The oldest accepted stored version.</summary>
     public long MinimumSupportedVersion { get; }
+    /// <summary>The newest accepted version and the version used for new documents.</summary>
     public long CurrentVersion { get; }
+    /// <summary>Validates the identifier and version range before creating the format.</summary>
     public PresetFormat(string identifier, long minimumSupportedVersion = 1, long currentVersion = 1)
         : this(Validate(new Fields(identifier, minimumSupportedVersion, currentVersion))) { }
 
@@ -150,6 +204,7 @@ public sealed class PresetFormat
         return fields;
     }
 
+    /// <summary>Validates the format fields supplied by the JSON serializer.</summary>
     // Missing JSON versions reach Rust as zero. Distinct parameter names preserve existing C# named calls.
     [JsonConstructor]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -170,6 +225,7 @@ public sealed class PresetFormat
     /// <summary>Writes the portable UTF-8 format JSON object for exchange with other bindings.</summary>
     public byte[] ToJson() => Native.Call(12, JsonSerializer.SerializeToUtf8Bytes(this, Native.Json));
 
+    /// <summary>Wraps a payload in a document using the current format version.</summary>
     public PresetDocument<T> MakeDocument<T>(T payload, PresetMetadata? metadata = null) =>
         new(new(Identifier, CurrentVersion), metadata ?? new(), payload);
 }
@@ -219,12 +275,16 @@ public static class PresetJsonCodec
     public static byte[] NormalizeDocumentEnvelopes(byte[] data, PresetFormat format, PresetDocumentLimits? limits = null)
         => NormalizeEnvelopes(data, format, "collection", limits);
 
+    /// <summary>Encodes a single document to UTF-8 JSON within the supplied limits.</summary>
     public static byte[] Encode<T>(PresetDocument<T> document, PresetDocumentLimits? limits = null) =>
         EncodeValue(EncodedDocument<T>.From(document), "document", limits);
+    /// <summary>Encodes a document collection to a UTF-8 JSON array.</summary>
     public static byte[] Encode<T>(IReadOnlyList<PresetDocument<T>> documents, PresetDocumentLimits? limits = null) =>
         EncodeValue(documents?.Select(EncodedDocument<T>.From), "collection", limits,
             documents is null ? null : () => documents.Count);
+    /// <summary>Validates and decodes one document against the expected format.</summary>
     public static PresetDocument<T> DecodeDocument<T>(byte[] data, PresetFormat format, PresetDocumentLimits? limits = null) => DecodeValue<PresetDocument<T>>(data, format, "document", limits);
+    /// <summary>Validates and decodes a document collection against the expected format.</summary>
     public static IReadOnlyList<PresetDocument<T>> DecodeDocuments<T>(byte[] data, PresetFormat format, PresetDocumentLimits? limits = null) => DecodeValue<PresetDocument<T>[]>(data, format, "collection", limits);
     private static JsonSerializerOptions DocumentJson(int maximumDepth) => new(Native.Json) { MaxDepth = maximumDepth };
     private static byte[] EncodeValue<T>(T value, string root, PresetDocumentLimits? limits, Func<int>? documentCount = null)

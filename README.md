@@ -15,12 +15,11 @@ package checks. The native frameworks live in `Artifacts/`.
 - Swift API examples: [codec](#swift) and [file I/O](#optional-file-io).
 - [Maintainer setup and acceptance](#development-and-acceptance).
 
-Swift products require Swift 6.3 and macOS 26 or later; the tracked framework
+Swift products require Swift 6.3 and macOS 26 or later. The tracked framework
 contains ARM64 and Intel slices. Rust uses the pinned 1.99.1 toolchain. The .NET 10
-NuGet package is built for universal macOS 26+ and Windows x64. Windows package
-acceptance uses an owned Windows 11 ARM64 host with x64 .NET and emulation.
+NuGet package contains native assets for macOS ARM64, macOS x64, and Windows x64.
 See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
-for the tooling and runtime requirements.
+for maintainer checks, including x64 emulation on Windows ARM64.
 
 ## Boundaries
 
@@ -263,9 +262,9 @@ using only the installed header and framework.
 ### .NET
 
 .NET consumers use `NaviApps.PresetDocuments`, `PresetFormat` and
-`PresetJsonCodec`. NuGet installs the source-matched native library from the
-appropriate macOS or Windows x64 package. No package feed
-publication is part of local packing or CI.
+`PresetJsonCodec`. NuGet installs the appropriate source-matched native asset
+from the combined macOS and Windows x64 package. The distribution workflow
+retains the verified package as a CI artifact.
 See [package installation, examples and managed checks](https://github.com/naviapps/preset-documents/blob/main/bindings/dotnet/README.md).
 
 ### Shared native contract
@@ -333,10 +332,10 @@ prepare it without a separate checkout or GitHub credentials.
 
 `make test-consumer` builds and runs the SDK-owned package in
 `fixtures/consumers/swift/` against only installable inputs. It imports both public products,
-round-trips a document through the native codec, and verifies create-only file
-publication and collision rejection in an owned temporary directory. It uses
-the tracked framework without rebuilding it and isolates the SwiftPM
-configuration and caches from the developer checkout.
+round-trips a document through the native codec, and checks the write budget,
+create-only collision rejection, and approved replacement recovery on APFS in an
+owned temporary directory. It uses the tracked framework without rebuilding it
+and isolates the SwiftPM configuration and caches from the developer checkout.
 
 GitHub Actions runs the Swift tests and standalone SwiftPM consumer on macOS 26
 with Xcode 26.6 and on macOS 27 with Xcode 27.2. Public Windows x64 CI runs Rust
@@ -380,6 +379,12 @@ the full SDK commit SHA on `main`:
 gh workflow run check-sdk-distribution.yml -R naviapps/sdk-tooling \
   -f sdk=preset-documents -f "revision=$(git rev-parse HEAD)"
 ```
+
+The run builds and tests the Windows x64 DLL, then combines it with the rebuilt
+macOS native assets in one NuGet package. The macOS and Windows consumers
+restore the same package bytes. Download the `.nupkg` and `.nupkg.json` from the
+run's `preset-documents-nuget-…` artifact. Pass `-f windows-on-arm=true` to the
+dispatch command to also verify the x64 package on GitHub's Windows on Arm runner.
 
 See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
 for local x64 verification on Windows x64 or ARM64.

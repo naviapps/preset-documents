@@ -2,27 +2,24 @@
 
 ## Installation and first use
 
-The package targets .NET 10. Use the macOS variant on macOS 26 or later with
-Apple Silicon or Intel .NET. On Windows 11 use the `win-x64` variant with x64
-.NET, including when running an x64 process on Windows ARM64. The macOS and
-Windows packages have the same ID and version. Use separate local feeds and
-NuGet caches when restoring more than one variant.
+The combined package targets .NET 10 and contains `osx-arm64`, `osx-x64`, and
+`win-x64` native assets. It runs on macOS 26 or later and Windows 11, including
+x64 .NET on Windows ARM64. NuGet chooses the asset for the .NET process or the
+runtime identifier selected at publish time.
 
-On macOS, `mise exec -- make test-bindings` uses the
-[pinned SDK Tooling](../../README.md#distribution-checks) to verify the tracked framework,
-builds the universal package in `.native-build/macos/packages` and verifies it
-using a standalone .NET consumer. The packaged macOS dylib has its own ad hoc
-signature. On Windows, use the [package acceptance command](#windows-package-acceptance)
-to build the package and its `preset-documents-windows.json` receipt locally.
-Verify the Windows package SHA-256 against the receipt.
-In a new consumer directory, replace the example path with your verified local feed:
+Download the package and its `.nupkg.json` receipt from the successful
+[SDK distribution run](../../README.md#distribution-checks) for your selected
+commit. Verify the package SHA-256 with the receipt before restoring from that
+directory. In a new consumer directory, restore into a fresh cache so older
+platform-only builds of the same version cannot satisfy the restore:
 
 ```sh
-dotnet new console --framework net10.0
-dotnet add package NaviApps.PresetDocuments --version 0.1.0 --source "<package-directory>"
+dotnet new console --framework net10.0 --no-restore
+dotnet add package NaviApps.PresetDocuments --version 0.1.0 --no-restore
+dotnet restore --source "<package-directory>" --packages ./.packages
 ```
 
-Replace `Program.cs` with this example and run `dotnet run`:
+Replace `Program.cs` with this example and run `dotnet run --no-restore`:
 
 ```csharp
 using NaviApps.PresetDocuments;
@@ -101,8 +98,10 @@ and internal whitespace, remain exact. Hosts own payload conversion and migratio
 Run these commands from the SDK root after the
 [maintainer setup](https://github.com/naviapps/preset-documents#development-and-acceptance).
 `mise exec -- make test-bindings` verifies the tracked macOS framework and runs
-C ownership and managed tests, including the clean NuGet consumer. It uses the
-tracked native library as the package asset.
+C ownership and managed tests, including the clean NuGet consumer. The macOS
+development package and its receipt are written to `.native-build/packages`.
+The packer stages the verified framework slices as standalone dylibs with their
+own ad hoc signatures. Use this development package only on macOS.
 
 Run the full managed suite against the tracked macOS framework:
 
@@ -145,7 +144,10 @@ Runner workspace capture to tie the receipt to the tested source. This is
 standalone SDK evidence.
 
 The maintainer's distribution workflow runs package acceptance on Windows x64.
-The local Windows command supports both x64 and ARM64 hosts.
+It combines this accepted native build with the macOS assets and reruns the
+consumer against the same combined package on each platform. The local Windows
+command supports both x64 and ARM64 hosts, and its development package is for
+Windows x64 only.
 
 ## File I/O
 

@@ -15,8 +15,11 @@ public sealed class PresetReplacementRevision
 /// <summary>The observed identity of the displaced item. Its contents may have changed.</summary>
 public enum PresetDisplacedIdentity
 {
+    /// <summary>The observed identity matches the approved file.</summary>
     MatchesApprovedFile,
+    /// <summary>The displaced item has a different identity.</summary>
     Different,
+    /// <summary>The displaced identity could not be verified.</summary>
     Unverified
 }
 
@@ -55,12 +58,15 @@ public static class PresetDocumentFiles
         return path;
     }
 
+    /// <summary>Reads an opened regular file within the byte budget.</summary>
     public static async Task<byte[]> ReadAsync(string path, int maximumByteCount = 64 * 1024 * 1024, CancellationToken cancellationToken = default)
     {
         var options = new { path = Absolute(path), maximumByteCount };
         return await ObserveAsync(() => Native.Call(5, [], options), cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>Publishes a complete file at the destination, replacing an existing regular file.</summary>
+    /// <remarks>An initially absent destination is created exclusively. A dispatched write reports its actual result after cancellation.</remarks>
     public static Task WriteAtomicallyAsync(byte[] data, string path, int maximumByteCount = 64 * 1024 * 1024, CancellationToken cancellationToken = default)
         => WriteAsync(6, data, path, maximumByteCount, cancellationToken);
 

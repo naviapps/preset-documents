@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch
 from sdk_tooling import windows_delivery
 from sdk_tooling.adapters import load
 
+from distribution import pack_nuget, verify_bindings
 from distribution import verify_windows as driver
 
 
@@ -36,6 +37,8 @@ class WindowsOutputTests(unittest.TestCase):
                 library.write_bytes(b"fresh SDK DLL")
                 import_library = published / (library.name + ".lib")
                 import_library.write_bytes(b"fresh import library")
+                (published / driver.NATIVE_RECEIPT).write_bytes(b"verified native receipt")
+                receipt_digest = hashlib.sha256(b"verified native receipt").hexdigest()
                 fixture = root / "fixtures/consumers/dotnet/Program.cs"
                 fixture.parent.mkdir(parents=True)
                 fixture.write_text("using NaviApps.PresetDocuments;", encoding="utf-8")
@@ -52,7 +55,7 @@ class WindowsOutputTests(unittest.TestCase):
                     "PATH": "owned-toolchain",
                 }
                 dotnet = root / "dotnet-x64/dotnet.exe"
-                native = Mock(version="0.1.0", library="preset_documents")
+                native = Mock(root=root, version="0.1.0", library="preset_documents")
                 shared = Mock()
                 shared.host_architecture.return_value = host
                 shared.MSVC_TARGETS = hosts
@@ -84,11 +87,20 @@ class WindowsOutputTests(unittest.TestCase):
                 bindings = Mock()
                 package_hash = hashlib.sha256(b"package").hexdigest()
 
-                def pack(dotnet, project, *, output, **options):
-                    (output / "NaviApps.PresetDocuments.0.1.0.nupkg").write_bytes(b"package")
+                def pack(selected, **options):
+                    self.assertIs(selected, native)
+                    output = root / ".native-build/packages"
+                    output.mkdir()
+                    package = output / "NaviApps.PresetDocuments.0.1.0.nupkg"
+                    package.write_bytes(b"package")
+                    package.with_suffix(".nupkg.json").write_text(
+                        json.dumps(
+                            {"sha256": package_hash, "nativeReceipts": {rid: receipt_digest}}
+                        )
+                    )
+                    return package
 
-                bindings.pack_project.side_effect = pack
-                bindings.audit_package.return_value = package_hash
+                bindings.pack_native.side_effect = pack
 
                 def stage_native(source, destination):
                     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -100,6 +112,7 @@ class WindowsOutputTests(unittest.TestCase):
                 bindings.stage_native.side_effect = stage_native
                 artifact_tooling = load("artifacts")
                 bindings.build_lock.side_effect = artifact_tooling.build_lock
+                bindings.files.side_effect = artifact_tooling.files
                 bindings.hashes.side_effect = artifact_tooling.hashes
                 bindings.file_sha256.side_effect = artifact_tooling.file_sha256
                 bindings.write_json.side_effect = artifact_tooling.write_json
@@ -128,6 +141,8 @@ class WindowsOutputTests(unittest.TestCase):
                     patch.object(driver, "ROOT", root),
                     patch.object(driver, "ffi_product", return_value=native) as builder,
                     patch.object(driver, "load", side_effect=tools.__getitem__),
+                    patch.object(pack_nuget, "load", side_effect=tools.__getitem__),
+                    patch.object(verify_bindings, "load", side_effect=tools.__getitem__),
                     patch.object(driver, "support_inputs", side_effect=(support, after)),
                     patch.object(windows_delivery, "acceptance_source", return_value=workspace),
                     patch.multiple(
@@ -148,12 +163,12 @@ class WindowsOutputTests(unittest.TestCase):
                             "support": "acceptance support files changed",
                         }
                         with self.assertRaisesRegex(ValueError, messages[error]):
-                            driver.main([])
+                            driver.main(["--export-native"])
                         self.assertFalse(artifacts.exists())
                         self.assertFalse((root / ".native-build" / rid).exists())
                         if error != "support":
                             bindings.run_managed.assert_not_called()
-                            bindings.pack_project.assert_not_called()
+                            bindings.pack_native.assert_not_called()
                             self.assertFalse(
                                 any(
                                     call.args[0][0].endswith(".exe")
@@ -161,7 +176,7 @@ class WindowsOutputTests(unittest.TestCase):
                                 )
                             )
                         continue
-                    driver.main([])
+                    driver.main(["--export-native"])
 
                 builder.assert_called_once_with(root)
                 shared.native_environment.assert_called_once_with(
@@ -199,26 +214,16 @@ class WindowsOutputTests(unittest.TestCase):
                 )
                 self.assertEqual(c["libraries"], [staged_import])
                 self.assertFalse(candidate.exists())
-                self.assertEqual(bindings.stage_native.call_args.args[0], verified_library)
                 managed = bindings.run_managed.call_args.kwargs
                 self.assertEqual(bindings.run_managed.call_args.args[0], dotnet)
                 self.assertEqual(managed["runtime"], rid)
                 self.assertEqual(
                     managed["properties"], {"PresetDocumentsNativeLibrary": str(verified_library)}
                 )
+                self.assertEqual(bindings.pack_native.call_args.kwargs["runtimes"], (rid,))
                 self.assertEqual(
-                    bindings.pack_project.call_args.kwargs["properties"],
-                    {
-                        "Version": "0.1.0",
-                        "PresetDocumentsRuntimeIdentifier": rid,
-                        "PresetDocumentsNativeLibrary": str(
-                            candidate / "native" / rid / library.name
-                        ),
-                    },
-                )
-                self.assertEqual(
-                    bindings.audit_package.call_args.kwargs["runtime_files"],
-                    {f"runtimes/{rid}/native/preset_documents.dll": verified_library},
+                    bindings.pack_native.call_args.kwargs["environment"]["DOTNET_BIN"],
+                    str(dotnet),
                 )
                 consumer = bindings.run_isolated_consumer.call_args.kwargs
                 self.assertEqual(bindings.run_isolated_consumer.call_args.args[0], dotnet)
@@ -251,6 +256,11 @@ class WindowsOutputTests(unittest.TestCase):
                     receipt["dllSha256"], hashlib.sha256(library.read_bytes()).hexdigest()
                 )
                 self.assertEqual(receipt["exports"], ["preset_documents_abi_version"])
+                export = artifacts / "sdk-windows" / rid
+                self.assertEqual(
+                    artifact_tooling.hashes(artifact_tooling.files(export), export),
+                    artifact_tooling.hashes(artifact_tooling.files(published), published),
+                )
 
     def test_rejects_arm64_target_instead_of_selecting_a_native_package(self):
         with (

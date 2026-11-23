@@ -17,3 +17,8 @@ maximumByteCount = 4096
 [windows_bindings]
 packages = ["preset-documents-ffi"]
 projects = ["bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj"]
+
+[nuget]
+package_id = "NaviApps.PresetDocuments"
+fixtures = ["fixtures/consumers/dotnet/Program.cs"]
+windows_x64 = true
