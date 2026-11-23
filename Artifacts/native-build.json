@@ -1,11 +1,1004 @@
 {
-  "abiVersion": null,
+  "abiProbeArchitecture": "arm64",
+  "abiVersion": 1,
   "architectures": [
     "arm64",
     "x86_64"
   ],
   "buildScriptInputDirectories": [],
   "buildScriptInputRoots": [],
+  "cargoBuild": {
+    "aarch64-apple-darwin": [
+      {
+        "compilation": "target",
+        "features": [
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "bitflags",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "bitflags",
+        "version": "2.13.2"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "cfg-if",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "cfg_if",
+        "version": "1.0.5"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "serde"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "deranged",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "deranged",
+        "version": "0.5.9"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "errno",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "errno",
+        "version": "0.3.14"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "default",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "fastrand",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "fastrand",
+        "version": "2.5.0"
+      },
+      {
+        "compilation": "host",
+        "features": [],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "getrandom",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "0.4.3"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "getrandom",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "getrandom",
+        "version": "0.4.3"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "itoa",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "itoa",
+        "version": "1.0.18"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "libc",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "0.2.191"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "libc",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "libc",
+        "version": "0.2.191"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "memchr",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "memchr",
+        "version": "2.8.3"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "num-conv",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "num_conv",
+        "version": "0.2.2"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "race",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "once_cell",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "once_cell",
+        "version": "1.21.4"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "powerfmt",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "powerfmt",
+        "version": "0.2.1"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "preset-documents",
+        "source": "workspace",
+        "targetName": "preset_documents",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "cdylib"
+        ],
+        "name": "preset-documents-ffi",
+        "source": "workspace",
+        "targetName": "preset_documents",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "preset-documents-file-io",
+        "source": "workspace",
+        "targetName": "preset_documents_file_io",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "proc-macro2",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.107"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "proc-macro2",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "proc_macro2",
+        "version": "1.0.107"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "quote",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.47"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "quote",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "quote",
+        "version": "1.0.47"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "alloc",
+          "default",
+          "fs",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "rustix",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.1.6"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "default",
+          "fs",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "rustix",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "rustix",
+        "version": "1.1.6"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default",
+          "derive",
+          "serde_derive",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "serde",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "derive",
+          "serde_derive",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "serde",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "alloc",
+          "result",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "serde_core",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "result",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_core",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde_core",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default"
+        ],
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "serde_derive",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde_derive",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default",
+          "raw_value",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "serde_json",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.154"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "raw_value",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_json",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde_json",
+        "version": "1.0.154"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "clone-impls",
+          "derive",
+          "parsing",
+          "printing",
+          "proc-macro"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "syn",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "syn",
+        "version": "3.0.9"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "getrandom"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "tempfile",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "tempfile",
+        "version": "3.27.0"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "default",
+          "formatting",
+          "parsing",
+          "serde",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "time",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "time",
+        "version": "0.3.55"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "time-core",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "time_core",
+        "version": "0.1.9"
+      },
+      {
+        "compilation": "host",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "unicode-ident",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "unicode_ident",
+        "version": "1.0.27"
+      },
+      {
+        "compilation": "host",
+        "features": [],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "zmij",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.23"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "zmij",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "zmij",
+        "version": "1.0.23"
+      }
+    ],
+    "x86_64-apple-darwin": [
+      {
+        "compilation": "target",
+        "features": [
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "bitflags",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "bitflags",
+        "version": "2.13.2"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "cfg-if",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "cfg_if",
+        "version": "1.0.5"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "serde"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "deranged",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "deranged",
+        "version": "0.5.9"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "errno",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "errno",
+        "version": "0.3.14"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "default",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "fastrand",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "fastrand",
+        "version": "2.5.0"
+      },
+      {
+        "compilation": "host",
+        "features": [],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "getrandom",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "0.4.3"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "getrandom",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "getrandom",
+        "version": "0.4.3"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "itoa",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "itoa",
+        "version": "1.0.18"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "libc",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "0.2.191"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "libc",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "libc",
+        "version": "0.2.191"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "memchr",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "memchr",
+        "version": "2.8.3"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "num-conv",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "num_conv",
+        "version": "0.2.2"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "race",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "once_cell",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "once_cell",
+        "version": "1.21.4"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "powerfmt",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "powerfmt",
+        "version": "0.2.1"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "preset-documents",
+        "source": "workspace",
+        "targetName": "preset_documents",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "cdylib"
+        ],
+        "name": "preset-documents-ffi",
+        "source": "workspace",
+        "targetName": "preset_documents",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "preset-documents-file-io",
+        "source": "workspace",
+        "targetName": "preset_documents_file_io",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "proc-macro2",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.107"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "proc-macro2",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "proc_macro2",
+        "version": "1.0.107"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "quote",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.47"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "proc-macro"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "quote",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "quote",
+        "version": "1.0.47"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "alloc",
+          "default",
+          "fs",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "rustix",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.1.6"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "default",
+          "fs",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "rustix",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "rustix",
+        "version": "1.1.6"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default",
+          "derive",
+          "serde_derive",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "serde",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "derive",
+          "serde_derive",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "serde",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "alloc",
+          "result",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "serde_core",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "result",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_core",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde_core",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default"
+        ],
+        "kind": [
+          "proc-macro"
+        ],
+        "name": "serde_derive",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde_derive",
+        "version": "1.0.229"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "default",
+          "raw_value",
+          "std"
+        ],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "serde_json",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.154"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "raw_value",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "serde_json",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "serde_json",
+        "version": "1.0.154"
+      },
+      {
+        "compilation": "host",
+        "features": [
+          "clone-impls",
+          "derive",
+          "parsing",
+          "printing",
+          "proc-macro"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "syn",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "syn",
+        "version": "3.0.9"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default",
+          "getrandom"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "tempfile",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "tempfile",
+        "version": "3.27.0"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "alloc",
+          "default",
+          "formatting",
+          "parsing",
+          "serde",
+          "std"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "time",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "time",
+        "version": "0.3.55"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "time-core",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "time_core",
+        "version": "0.1.9"
+      },
+      {
+        "compilation": "host",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "unicode-ident",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "unicode_ident",
+        "version": "1.0.27"
+      },
+      {
+        "compilation": "host",
+        "features": [],
+        "kind": [
+          "custom-build"
+        ],
+        "name": "zmij",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "build-script-build",
+        "version": "1.0.23"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "zmij",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "targetName": "zmij",
+        "version": "1.0.23"
+      }
+    ]
+  },
   "compiler": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
   "configuration": {
     "ffi": "crates/ffi",
@@ -973,7 +1966,7 @@
         },
         "inputs": {
           "Cargo.toml": "060c15baa5038fc07cbd5d0786a065707d6337616054164b93653044ca58c478",
-          "crates/ffi/Cargo.toml": "932838930a8a021f3d614ffc26ac67196b2cd9dd7ffee9d7e0ff82871e274c73"
+          "crates/ffi/Cargo.toml": "f42962a1b576b8f36642cae24706159b01b0eaa87f1f641fd3b70611af16d7c2"
         },
         "name": "preset-documents-ffi",
         "source": "workspace",
@@ -2235,7 +3228,7 @@
       "Cargo.lock": "e1b41c1daa0725f249c60a0f9d5d357d2c3d823a10993866d501ea2695a7a4f6",
       "Cargo.toml": "060c15baa5038fc07cbd5d0786a065707d6337616054164b93653044ca58c478",
       "crates/core/Cargo.toml": "3a61fc6674ef7792643a18e8a621bc01b29578cb5c3d31a2a3989a9f93ca9e6f",
-      "crates/ffi/Cargo.toml": "932838930a8a021f3d614ffc26ac67196b2cd9dd7ffee9d7e0ff82871e274c73",
+      "crates/ffi/Cargo.toml": "f42962a1b576b8f36642cae24706159b01b0eaa87f1f641fd3b70611af16d7c2",
       "crates/file-io/Cargo.toml": "f3a34406e48b526795c0dda11d8452ada601c6f71ffe780c7013ec846798e36c",
       "rust-toolchain.toml": "d13306be0ecda81ce779baa290ffb417380d525928477f16200884b5169cca33"
     }
@@ -2319,8 +3312,8 @@
     "ThirdParty/zmij-1.0.23/LICENSE-MIT": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
     "crates/core/Cargo.toml": "3a61fc6674ef7792643a18e8a621bc01b29578cb5c3d31a2a3989a9f93ca9e6f",
     "crates/core/src/lib.rs": "f1cf77ef5a6f8ec48042aa01c47df776801f0225e4a08e329f44334e058228fa",
-    "crates/ffi/Cargo.toml": "932838930a8a021f3d614ffc26ac67196b2cd9dd7ffee9d7e0ff82871e274c73",
-    "crates/ffi/include/preset_documents.h": "094b4db4cca4d7121ebd40e23c37dd44013f2e2efc960a35cd40cdbc3f6a8559",
+    "crates/ffi/Cargo.toml": "f42962a1b576b8f36642cae24706159b01b0eaa87f1f641fd3b70611af16d7c2",
+    "crates/ffi/include/preset_documents.h": "83ff7d455e26d842d706fca940c37631d5e6297775eb375dca0ae93cecc80096",
     "crates/ffi/module.modulemap": "31a7b1e68a9d975eecd934f16fd593e8283b991a8c665c23cc28ce222227073e",
     "crates/ffi/src/lib.rs": "7882647ea7c3d575e6dafe1cdbff26f65fed6e581ca90a4d11d60e0d5f98adf3",
     "crates/file-io/Cargo.toml": "f3a34406e48b526795c0dda11d8452ada601c6f71ffe780c7013ec846798e36c",
@@ -2339,12 +3332,12 @@
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Headers": "036ae9446c4f0c59046671d1d96e2de4f606b340d8a5c1927b2d51bc293e0365",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Modules": "278b6b2d8f8418e2e4877a67a109b6e3865174e4fa7405870a643e95cbc2f783",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Resources": "c213ee8e9c523538d862da3e5716b64bf090f6a1be08914954ae33cfbda7dbb2",
-    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/CPresetDocuments": "aa023567bce2a707657168b565f00efab967224703bf40e08b5642adc34c557b",
-    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Headers/preset_documents.h": "094b4db4cca4d7121ebd40e23c37dd44013f2e2efc960a35cd40cdbc3f6a8559",
+    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/CPresetDocuments": "3dc70656c878469548f71aa9a4a3b2875382bc7c6e5c4bc8262d4e2586a7783b",
+    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Headers/preset_documents.h": "83ff7d455e26d842d706fca940c37631d5e6297775eb375dca0ae93cecc80096",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Modules/module.modulemap": "31a7b1e68a9d975eecd934f16fd593e8283b991a8c665c23cc28ce222227073e",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Resources/Info.plist": "ffcfc2dd703924ed531ee18d8a87bb5217bdeba3199a45483e4443eecbc0c4ab",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Resources/ThirdPartyNotices.txt": "fd91af9711f1013213a65abfd225aa7c7243406f9a879d07d93f582817a949fa",
-    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/_CodeSignature/CodeResources": "fb52b4cb5ef1555b32fbb4bc6546bc084f8b9e6a305c4ad95d2018a0cc7e6220",
+    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/_CodeSignature/CodeResources": "d488e628660f5f4f90500a9ba6885f9b295f6ad6d07fa58f4e889fbc1885a1e7",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/Current": "ee26006c07174064a7bed9b283a8b016d74a295e05c4e23a1846538d69b23c5f"
   },
   "productionSources": [
@@ -2359,10 +3352,12 @@
   "schema": 3,
   "toolInputs": {
     "artifacts.py": "1754138ef1807e593e1d228d678cb396398435c6ff69c1d96fadc80fe443747e",
+    "c_compiler.py": "3005695b914b6e416c7eddd1f31d3ee37a633f4176ea7a131b59935d8ad95594",
     "cargo.py": "ad44c7666dfcff89d35c7008ccada6910a6ea6f299a9f955e917f841a563a597",
+    "cargo_build.py": "0aee57b901cbfc9ed8bebff51725f9a71d242f904e184b1c9965965741dabba4",
     "crates/rustc-dep-info/src/main.rs": "0a59fb162cc855001899ad9b83875fac0ed837e73caafd116453352c9b56e2cf",
-    "ffi.py": "805e7507a2a59c5c5d3edb2d654a2276ea8677ac1b755aa0dee466af87651d85",
+    "ffi.py": "4e3f22f317710575236e124899b4dcadf6ddc1eed8482294a8a5874314d010ce",
     "native_plan.py": "126791c1993dded2be0f46784a28528d40ed1218c46d1f1aadb2c026f047dcd3",
-    "xcframework.py": "37d848a3d58af479b8c13c6466cef1917029e4a9709e986a66a6a4ff1e431e08"
+    "xcframework.py": "277c2e390f94f45614479e289deccea9c2c3e0af71d5c6ce5421872161671558"
   }
 }

@@ -1,5 +1,6 @@
 #ifndef PRESET_DOCUMENTS_H
 #define PRESET_DOCUMENTS_H
+#define PRESET_DOCUMENTS_ABI_VERSION 1U
 #include <stddef.h>
 #include <stdint.h>
 #ifdef __cplusplus

@@ -9,7 +9,7 @@ rust-version.workspace = true
 
 [lib]
 name = "preset_documents"
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["cdylib"]
 doctest = false
 
 [dependencies]

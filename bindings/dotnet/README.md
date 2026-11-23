@@ -115,7 +115,7 @@ mise exec -- make test-managed
 To build and run the x64 SDK on an owned Windows 11 ARM64 worker, use native
 ARM64 Python and Rust, the Rust `x86_64-pc-windows-msvc` standard library, and
 Visual Studio Build Tools with both ARM64 and x64 C++ components. Use the x64
-variant of the .NET SDK version in `mise.toml` so the managed fixtures and NuGet
+variant of the .NET SDK version in [`global.json`](../../global.json) so the managed fixtures and NuGet
 consumer can load the x64 DLL. The ARM64 and x64 .NET SDKs have separate
 [installation paths](https://learn.microsoft.com/en-us/dotnet/core/install/windows#arm-based-windows-pcs).
 The command uses the public SDK Tooling revision pinned in `mise.toml`.

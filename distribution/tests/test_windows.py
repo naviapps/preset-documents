@@ -39,7 +39,9 @@ class WindowsOutputTests(unittest.TestCase):
                 fixture = root / "fixtures/consumers/dotnet/Program.cs"
                 fixture.parent.mkdir(parents=True)
                 fixture.write_text("using NaviApps.PresetDocuments;", encoding="utf-8")
-                (root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
+                (root / "global.json").write_text(
+                    '{"sdk":{"version":"10.0.403","rollForward":"disable"}}'
+                )
                 legacy = root / "target" / target / "release"
                 if stale:
                     legacy.mkdir(parents=True)
@@ -264,7 +266,9 @@ class WindowsOutputTests(unittest.TestCase):
         shared = Mock()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            (root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
+            (root / "global.json").write_text(
+                '{"sdk":{"version":"10.0.403","rollForward":"disable"}}'
+            )
             with (
                 patch.object(driver, "ROOT", root),
                 patch.object(windows_delivery, "acceptance_source", return_value=("a" * 40, None)),
