@@ -15,7 +15,7 @@ developer tools in `tools/`, and tracked native frameworks in `Artifacts/`.
   and [file I/O](https://github.com/naviapps/preset-documents/blob/main/Sources/PresetDocumentsFileIO/PresetDocumentsFileIO.docc/PresetDocumentsFileIO.md).
 - [Maintainer setup and acceptance](#development-and-acceptance).
 
-Swift products require Swift 6.4 and macOS 26 or later; the tracked framework
+Swift products require Swift 6.3 and macOS 26 or later; the tracked framework
 contains ARM64 and Intel slices. Rust uses the pinned 1.99.1 toolchain. The .NET 10
 NuGet package is built for universal macOS 26+ and Windows x64. Windows package
 acceptance uses an owned Windows 11 ARM64 host with x64 .NET and emulation.
@@ -173,7 +173,7 @@ For a standalone executable, save this as `Package.swift`, replacing the revisio
 placeholder with a published full 40-character commit:
 
 ```swift
-// swift-tools-version: 6.4
+// swift-tools-version: 6.3
 import PackageDescription
 
 let package = Package(
@@ -297,7 +297,7 @@ Developer commands use the immutable `sdk-tooling` revision in
 for verified caches, offline use and source overrides. Ordinary SwiftPM and NuGet
 consumers do not need that setup.
 
-Use Swift 6.4, macOS 26+, Rust 1.99.1 and .NET 10. Select tools per command without
+Use Swift 6.3 or newer, macOS 26+, Rust 1.99.1 and .NET 10. Select tools per command without
 changing global configuration. Review `mise.toml` before trusting its scoped
 configuration. The complete `make check` gate requires a clean committed checkout
 because it includes independent installation from that exact Git revision.
@@ -359,8 +359,8 @@ selects one boundary. This is local-mirror installation evidence and does not
 test remote authentication or GitHub reachability. The macOS workflow requests
 full history and runs this gate in its existing worker job.
 
-GitHub Actions runs Rust and strict Swift tests on Xcode 27 and Rust and tool
-tests on Windows x64. CI also exercises standalone Swift/Rust/C consumers,
+GitHub Actions runs the full macOS SDK checks with Xcode 27, strict Swift tests
+with Xcode 26.6 on macOS 26, and Rust and tool tests on Windows x64. CI also exercises standalone Swift/Rust/C consumers,
 managed package tests and the installed `win-x64` NuGet package. See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
 for local x64 verification on Windows x64 or ARM64.
 
