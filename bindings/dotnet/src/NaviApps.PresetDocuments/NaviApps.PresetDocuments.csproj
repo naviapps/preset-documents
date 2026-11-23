@@ -20,7 +20,7 @@
     <None Include="../../../../ThirdParty/**/*" Exclude="../../../../ThirdParty/**/.DS_Store;../../../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
   </ItemGroup>
   <Target Name="RequirePresetDocumentsNativeLibrary" BeforeTargets="GenerateNuspec">
-    <Error Condition="'$(PresetDocumentsRuntimeIdentifier)' == '' or '$(PresetDocumentsNativeLibrary)' == ''" Text="Use tools/bindings.py or tools/windows.py with a source-matched native library." />
+    <Error Condition="'$(PresetDocumentsRuntimeIdentifier)' == '' or '$(PresetDocumentsNativeLibrary)' == ''" Text="Follow the package acceptance instructions in bindings/dotnet/README.md to supply a source-built native library." />
     <Error Condition="'$(PresetDocumentsRuntimeIdentifier)' != 'osx' and '$(PresetDocumentsRuntimeIdentifier)' != 'win-x64'" Text="PresetDocuments package production supports osx and win-x64." />
   </Target>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
