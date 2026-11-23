@@ -4,14 +4,14 @@ executable = "PresetDocumentsConsumer"
 
 [docs]
 
-[installed]
+[rust_c]
 git_url = "https://github.com/naviapps/preset-documents.git"
 rust_packages = ["preset-documents", "preset-documents-file-io"]
 
-[installed.c]
+[rust_c.c]
 framework = "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework"
 header = "preset_documents.h"
 
-[installed.c.options]
+[rust_c.c.options]
 path = "{owned}/c-consumer.preset"
 maximumByteCount = 4096

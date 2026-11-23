@@ -114,7 +114,7 @@ class WindowsOutputTests(unittest.TestCase):
                         clear=True,
                     ),
                     patch.object(driver, "ROOT", root),
-                    patch.object(driver, "builder", return_value=native) as builder,
+                    patch.object(driver, "ffi_product", return_value=native) as builder,
                     patch.object(driver, "load", side_effect=tools.__getitem__),
                     patch.object(driver, "support_inputs", side_effect=(support, after)),
                     patch.object(

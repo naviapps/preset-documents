@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from sdk_tooling.adapters import load
-from sdk_tooling.native_plan import builder
+from sdk_tooling.xcframework import xcframework
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "NaviApps.PresetDocuments"
@@ -102,7 +102,7 @@ def main():
         raise SystemExit("Set DOTNET_BIN to the task's .NET 10 executable")
     output = ROOT / ".native-build" / "macos"
     output.mkdir(parents=True, exist_ok=True)
-    native = builder(ROOT)
+    native = xcframework(ROOT)
     native.verify()
     framework_dir = native.artifact / "macos-arm64_x86_64"
     library = framework_dir / (native.module + ".framework") / native.module

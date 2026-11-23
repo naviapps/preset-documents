@@ -11,7 +11,7 @@ import tomllib
 from pathlib import Path
 
 from sdk_tooling.adapters import load, support_inputs
-from sdk_tooling.native_plan import builder
+from sdk_tooling.native_plan import ffi_product
 
 from distribution.verify_bindings import pack_and_consume
 
@@ -41,7 +41,7 @@ def main(argv=None):
     ).strip()
     if dotnet_version != tomllib.loads((ROOT / "mise.toml").read_text())["tools"]["dotnet"]:
         raise ValueError("Use the pinned x64 .NET SDK version from mise.toml")
-    native = builder(ROOT)
+    native = ffi_product(ROOT)
 
     def run(*args):
         subprocess.run([str(a) for a in args], cwd=ROOT, env=env, check=True)

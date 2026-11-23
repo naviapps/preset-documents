@@ -358,7 +358,7 @@ fetch missing history. For example, from the SDK root on an owned macOS
 worker with mise-managed tools:
 
 ```sh
-mise run sdk-tooling -- installed-consumers --revision FULL_40_CHARACTER_CURRENT_COMMIT_ID \
+mise run sdk-tooling -- rust-c-consumers --revision FULL_40_CHARACTER_CURRENT_COMMIT_ID \
   --git-source /absolute/verified/preset-documents.git \
   --evidence /absolute/owned-artifacts/preset-installed-consumers.json
 ```
