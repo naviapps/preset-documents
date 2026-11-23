@@ -6,11 +6,10 @@ namespace NaviApps.PresetDocuments;
 /// <summary>An opaque observation of a destination to hold during one approval flow.</summary>
 public sealed class PresetReplacementRevision
 {
-    internal string Path { get; }
-    internal JsonElement NativeRevision { get; }
+    private readonly byte[] token;
+    internal ReadOnlySpan<byte> Token => token;
 
-    internal PresetReplacementRevision(string path, JsonElement nativeRevision)
-        => (Path, NativeRevision) = (path, nativeRevision);
+    internal PresetReplacementRevision(byte[] token) => this.token = token;
 }
 
 /// <summary>The observed identity of the displaced item. Its contents may have changed.</summary>
@@ -74,12 +73,7 @@ public static class PresetDocumentFiles
     public static Task<PresetReplacementRevision> CaptureReplacementAsync(string path, CancellationToken cancellationToken = default)
     {
         var absolutePath = Absolute(path);
-        return ObserveAsync(() =>
-        {
-            using var result = JsonDocument.Parse(Native.Call(8, [], new { path = absolutePath }));
-            if (result.RootElement.ValueKind != JsonValueKind.Object) throw InvalidReplacementResult();
-            return new PresetReplacementRevision(absolutePath, result.RootElement.Clone());
-        }, cancellationToken);
+        return ObserveAsync(() => new PresetReplacementRevision(Native.Call(8, [], new { path = absolutePath })), cancellationToken);
     }
 
     /// <summary>Rechecks an approved file and exchanges it with a complete staged file on macOS APFS.</summary>
@@ -89,9 +83,8 @@ public static class PresetDocumentFiles
         int maximumByteCount = 64 * 1024 * 1024, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(approval);
-        var options = new { path = approval.Path, maximumByteCount, revision = approval.NativeRevision };
         return DispatchWrite(data, maximumByteCount,
-            owned => ReadReplacementOutcome(Native.Call(9, owned, options)), cancellationToken);
+            owned => ReadReplacementOutcome(Native.ReplaceApproved(owned, approval.Token, maximumByteCount)), cancellationToken);
     }
 
     private static PresetReplacementOutcome ReadReplacementOutcome(byte[] bytes)

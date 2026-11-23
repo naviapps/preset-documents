@@ -13,11 +13,8 @@
 #include <unistd.h>
 #endif
 
-static void text_result(uint32_t operation, const char *data, const char *options,
-                        uint32_t expected_status, char *result, size_t capacity) {
-    PresetDocumentsBuffer *owner =
-        preset_documents_process(operation, (const uint8_t *)data, data == NULL ? 0 : strlen(data),
-                                 (const uint8_t *)options, strlen(options));
+static void copy_result(PresetDocumentsBuffer *owner, uint32_t expected_status, char *result,
+                        size_t capacity) {
     assert(owner != NULL);
     size_t length = 0;
     uint32_t status = 99;
@@ -29,9 +26,26 @@ static void text_result(uint32_t operation, const char *data, const char *option
     assert(strlen(result) == length);
 }
 
+static void text_result(uint32_t operation, const char *data, const char *options,
+                        uint32_t expected_status, char *result, size_t capacity) {
+    copy_result(preset_documents_process(operation, (const uint8_t *)data,
+                                         data == NULL ? 0 : strlen(data), (const uint8_t *)options,
+                                         strlen(options)),
+                expected_status, result, capacity);
+}
+
+static void replace_result(const char *data, const char *revision, uint32_t expected_status,
+                           char *result, size_t capacity) {
+    copy_result(preset_documents_replace_approved((const uint8_t *)data, strlen(data),
+                                                  (const uint8_t *)revision, strlen(revision), 64),
+                expected_status, result, capacity);
+}
+
 static void replacement_request_validation(void) {
     char result[128];
     text_result(8, NULL, "{\"path\":\"file.preset\"}", 1, result, sizeof result);
+    assert(strcmp(result, "{\"code\":\"invalidConfiguration\"}") == 0);
+    replace_result("new", "[]", 1, result, sizeof result);
     assert(strcmp(result, "{\"code\":\"invalidConfiguration\"}") == 0);
 #ifndef __APPLE__
 #ifdef _WIN32
@@ -100,25 +114,27 @@ static void approved_replacement(void) {
         return;
     }
     text_result(8, NULL, capture, 0, revision, sizeof revision);
-    assert(revision[0] == '{');
-    approval_options(replacement, sizeof replacement, target, revision);
 
     assert(rename(target, original) == 0);
-    text_result(9, "new", replacement, 1, result, sizeof result);
+    replace_result("new", revision, 1, result, sizeof result);
     assert(strcmp(result, "{\"code\":\"destinationChanged\"}") == 0);
     assert(access(target, F_OK) == -1 && errno == ENOENT);
     write_fixture(target, "another file");
-    text_result(9, "new", replacement, 1, result, sizeof result);
+    replace_result("new", revision, 1, result, sizeof result);
     assert(strcmp(result, "{\"code\":\"destinationChanged\"}") == 0);
     assert_fixture(target, "another file");
     assert_fixture(original, "original");
 
     text_result(8, NULL, capture, 0, revision, sizeof revision);
-    approval_options(replacement, sizeof replacement, target, revision);
-    text_result(9, "new", replacement, 0, result, sizeof result);
+    /* Old callers may still send a separate, byte-exact path in operation 9. */
+    approval_options(replacement, sizeof replacement, original, revision);
+    text_result(9, "new", replacement, 1, result, sizeof result);
+    assert(strcmp(result, "{\"code\":\"destinationChanged\"}") == 0);
+    replace_result("new", revision, 0, result, sizeof result);
     assert(strstr(result, "\"state\":\"committed\"") != NULL);
     assert(strstr(result, "\"displacedIdentity\":\"matchesApprovedFile\"") != NULL);
     assert_fixture(target, "new");
+    assert_fixture(original, "original");
 
     const char key[] = "\"recoveryDirectory\":\"";
     char *directory = strstr(result, key);
@@ -203,7 +219,7 @@ static void document_codec_routes(void) {
 
 int main(void) {
     metadata_timestamp_projection();
-    assert(preset_documents_abi_version() == 1);
+    assert(preset_documents_abi_version() == PRESET_DOCUMENTS_ABI_VERSION);
     PresetDocumentsTimestampParts timestamp = preset_documents_timestamp_parts(-0.125);
     assert(timestamp.whole_seconds == -1.0 && timestamp.fraction_length == 3);
     assert(memcmp(timestamp.fraction, "875", timestamp.fraction_length) == 0);

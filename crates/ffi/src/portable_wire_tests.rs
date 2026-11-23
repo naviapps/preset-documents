@@ -1,5 +1,6 @@
 use super::{
-    Buffer, preset_documents_buffer_data, preset_documents_buffer_free, preset_documents_process,
+    Buffer, MAXIMUM_OPTIONS_BYTES, preset_documents_buffer_data, preset_documents_buffer_free,
+    preset_documents_process, preset_documents_replace_approved,
 };
 use preset_documents::MAXIMUM_BYTES;
 use serde_json::json;
@@ -33,6 +34,19 @@ impl Reply {
         let bytes = unsafe { preset_documents_buffer_data(self.0, &mut length, &mut status) };
         assert!(!bytes.is_null());
         (status, unsafe { std::slice::from_raw_parts(bytes, length) })
+    }
+
+    fn replace(data: &[u8], revision: &[u8], maximum: usize) -> Self {
+        // Both slices remain readable throughout the call.
+        Self(unsafe {
+            preset_documents_replace_approved(
+                data.as_ptr(),
+                data.len(),
+                revision.as_ptr(),
+                revision.len(),
+                maximum,
+            )
+        })
     }
 }
 
@@ -189,6 +203,51 @@ fn approval_rejects_malformed_wire_arguments_without_touching_the_fixture() {
             br#"{"code":"approvedReplacementUnsupported"}"#.as_slice()
         )
     );
+    assert_eq!(fs::read_dir(&fixture.0).unwrap().count(), 0);
+}
+
+#[test]
+fn separate_approval_bytes_require_a_bounded_revision_with_an_absolute_path() {
+    let fixture = Fixture::new();
+    let path = fixture.0.join("日本語.preset");
+    let token = |path: &str| {
+        serde_json::to_vec(&json!({
+            "path": path,
+            "parent": {"device": 1, "inode": u64::MAX},
+            "file": {
+                "identity": {"device": -1, "inode": (1u64 << 53) + 1},
+                "size": 1,
+                "changeSeconds": 2,
+                "changeNanoseconds": 3,
+                "modifiedSeconds": -1,
+                "modifiedNanoseconds": 4
+            }
+        }))
+        .unwrap()
+    };
+    let valid = token(path.to_str().unwrap());
+    for revision in [
+        vec![],
+        b"[]".to_vec(),
+        b"{}".to_vec(),
+        token("relative.preset"),
+        token(&format!("{}\0", path.display())),
+        vec![b' '; MAXIMUM_OPTIONS_BYTES + 1],
+    ] {
+        assert_eq!(Reply::replace(b"new", &revision, 64).view(), (1, INVALID));
+    }
+    let null_revision =
+        Reply(unsafe { preset_documents_replace_approved(null(), 0, null(), 1, 64) });
+    assert_eq!(null_revision.view(), (1, INVALID));
+    let null_data = Reply(unsafe {
+        preset_documents_replace_approved(null(), 1, valid.as_ptr(), valid.len(), 64)
+    });
+    assert_eq!(null_data.view(), (1, INVALID));
+    #[cfg(target_os = "macos")]
+    let expected = br#"{"code":"outputTooLarge","byteCount":3,"maximumByteCount":2}"#.as_slice();
+    #[cfg(not(target_os = "macos"))]
+    let expected = br#"{"code":"approvedReplacementUnsupported"}"#.as_slice();
+    assert_eq!(Reply::replace(b"new", &valid, 2).view(), (1, expected));
     assert_eq!(fs::read_dir(&fixture.0).unwrap().count(), 0);
 }
 

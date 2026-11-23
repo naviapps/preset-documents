@@ -7,6 +7,8 @@ use serde::Deserialize;
 use serde_json::value::RawValue;
 use std::path::Path;
 
+const MAXIMUM_OPTIONS_BYTES: usize = 16 * 1024;
+
 pub struct Buffer {
     status: u32,
     bytes: Vec<u8>,
@@ -96,7 +98,22 @@ fn replacement_path(value: &str) -> Result<&Path, Error> {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn preset_documents_abi_version() -> u32 {
-    1
+    2
+}
+
+fn apply_replacement<'a>(
+    path: &Path,
+    revision: &ReplacementRevision,
+    maximum_byte_count: usize,
+    length: usize,
+    borrow_data: impl FnOnce() -> &'a [u8],
+) -> Result<Vec<u8>, Error> {
+    if !cfg!(target_os = "macos") {
+        return Err(Error::ApprovedReplacementUnsupported);
+    }
+    validate_write_size(length, maximum_byte_count)?;
+    let outcome = replace_approved(path, revision, borrow_data(), maximum_byte_count)?;
+    serde_json::to_vec(&outcome).map_err(|_| Error::NativeFailure)
 }
 
 fn process<'a>(
@@ -118,12 +135,13 @@ fn process<'a>(
         let path = replacement_path(&options.path)?;
         let revision: ReplacementRevision =
             configuration_object(options.revision.get().as_bytes())?;
-        if !cfg!(target_os = "macos") {
-            return Err(Error::ApprovedReplacementUnsupported);
-        }
-        validate_write_size(length, options.maximum_byte_count)?;
-        let outcome = replace_approved(path, &revision, borrow_data(), options.maximum_byte_count)?;
-        return serde_json::to_vec(&outcome).map_err(|_| Error::NativeFailure);
+        return apply_replacement(
+            path,
+            &revision,
+            options.maximum_byte_count,
+            length,
+            borrow_data,
+        );
     }
 
     if operation == 10 {
@@ -251,34 +269,72 @@ pub unsafe extern "C" fn preset_documents_process(
     options: *const u8,
     options_length: usize,
 ) -> *mut Buffer {
-    let result = std::panic::catch_unwind(|| {
+    owned_result(|| {
         if !matches!(operation, 6 | 7 | 9) && length > preset_documents::MAXIMUM_BYTES {
             return Err(Error::InputTooLarge {
                 byte_count: length,
                 maximum_byte_count: preset_documents::MAXIMUM_BYTES,
             });
         }
-        if options_length > 16384
+        if options_length > MAXIMUM_OPTIONS_BYTES
             || (data.is_null() && length != 0)
             || (options.is_null() && options_length != 0)
         {
             return Err(Error::InvalidConfiguration);
         }
-        let options = if options_length == 0 {
-            &[]
-        } else {
-            unsafe { std::slice::from_raw_parts(options, options_length) }
-        };
         // File writes validate their destination budget before borrowing these bytes.
-        process(operation, options, length, || {
-            if length == 0 {
-                &[]
-            } else {
-                unsafe { std::slice::from_raw_parts(data, length) }
-            }
+        process(
+            operation,
+            unsafe { input_bytes(options, options_length) },
+            length,
+            || unsafe { input_bytes(data, length) },
+        )
+    })
+}
+
+/// Replaces the exact path in the revision bytes returned by operation 8.
+///
+/// # Safety
+/// Inputs must be readable and unchanged for their lengths during this call.
+/// Null is accepted only for empty data. Free the returned owner exactly once.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn preset_documents_replace_approved(
+    data: *const u8,
+    length: usize,
+    revision: *const u8,
+    revision_length: usize,
+    maximum_byte_count: usize,
+) -> *mut Buffer {
+    owned_result(|| {
+        if revision.is_null()
+            || revision_length == 0
+            || revision_length > MAXIMUM_OPTIONS_BYTES
+            || (data.is_null() && length != 0)
+        {
+            return Err(Error::InvalidConfiguration);
+        }
+        let revision: ReplacementRevision =
+            configuration_object(unsafe { input_bytes(revision, revision_length) })?;
+        let path = replacement_path(revision.captured_path())?;
+        apply_replacement(path, &revision, maximum_byte_count, length, || unsafe {
+            input_bytes(data, length)
         })
     })
-    .unwrap_or(Err(Error::NativeFailure));
+}
+
+/// A nonempty input must remain readable and immutable for the lifetime of the return value.
+unsafe fn input_bytes<'a>(data: *const u8, length: usize) -> &'a [u8] {
+    if length == 0 {
+        &[]
+    } else {
+        unsafe { std::slice::from_raw_parts(data, length) }
+    }
+}
+
+fn owned_result(
+    operation: impl FnOnce() -> Result<Vec<u8>, Error> + std::panic::UnwindSafe,
+) -> *mut Buffer {
+    let result = std::panic::catch_unwind(operation).unwrap_or(Err(Error::NativeFailure));
     let buffer = match result {
         Ok(bytes) => Buffer { status: 0, bytes },
         Err(error) => Buffer {

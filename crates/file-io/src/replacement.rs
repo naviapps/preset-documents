@@ -34,6 +34,13 @@ pub struct ReplacementRevision {
     file: Revision,
 }
 
+impl ReplacementRevision {
+    /// The exact UTF-8 path inspected when the revision was captured.
+    pub fn captured_path(&self) -> &str {
+        &self.path
+    }
+}
+
 /// Identity observed after an exchange. Even a matching inode can have been edited.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

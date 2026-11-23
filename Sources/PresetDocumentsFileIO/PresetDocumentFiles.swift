@@ -3,8 +3,7 @@ import PresetDocuments
 
 /// An opaque observation of one local destination before the host asks for approval.
 public struct PresetReplacementRevision: Sendable {
-  fileprivate let url: URL
-  fileprivate let nativeJSON: Data
+  fileprivate let token: Data
 }
 
 /// What the native operation observed after attempting approved replacement.
@@ -119,12 +118,7 @@ public enum PresetDocumentFiles {
     let options = try JSONEncoder().encode(PathOptions(path: localPath(url)))
     return try await observe {
       let token = try PresetDocumentsNative.process(8, data: Data(), configuration: options)
-      guard let object = try? JSONSerialization.jsonObject(with: token),
-        object is [String: Any]
-      else {
-        throw PresetDocumentError.nativeFailure
-      }
-      return PresetReplacementRevision(url: url, nativeJSON: token)
+      return PresetReplacementRevision(token: token)
     }
   }
 
@@ -137,24 +131,11 @@ public enum PresetDocumentFiles {
     _ approval: PresetReplacementRevision, with data: Data,
     maximumByteCount: Int = 64 * 1024 * 1024
   ) async throws -> PresetReplacementOutcome {
-    let options = try replacementConfiguration(approval, maximumByteCount: maximumByteCount)
-    return try await dispatch {
-      let result = try PresetDocumentsNative.process(9, data: data, configuration: options)
+    try await dispatch {
+      let result = try PresetDocumentsNative.replaceApproved(
+        data, revision: approval.token, maximumByteCount: maximumByteCount)
       return try replacementOutcome(from: result)
     }
-  }
-
-  private static func replacementConfiguration(
-    _ approval: PresetReplacementRevision, maximumByteCount: Int
-  ) throws -> Data {
-    var options = try configuration(approval.url, maximumByteCount: maximumByteCount)
-    // Keep native numeric lexemes exact; Foundation is only used to validate the token as an object.
-    guard options.last == 0x7D else { throw PresetDocumentError.nativeFailure }
-    options.removeLast()
-    options.append(contentsOf: ",\"revision\":".utf8)
-    options.append(approval.nativeJSON)
-    options.append(0x7D)
-    return options
   }
 
   static func replacementOutcome(from data: Data) throws -> PresetReplacementOutcome {

@@ -29,7 +29,7 @@ package enum PresetDocumentsNative {
   package static func process(_ operation: UInt32, data: Data, configuration optionsData: Data)
     throws -> Data
   {
-    guard preset_documents_abi_version() == 1 else { throw PresetDocumentError.nativeFailure }
+    try requireMatchingABI()
     let owner = data.withUnsafeBytes { bytes in
       optionsData.withUnsafeBytes { config in
         preset_documents_process(
@@ -38,6 +38,26 @@ package enum PresetDocumentsNative {
       }
     }
     return try consume(owner)
+  }
+
+  package static func replaceApproved(_ data: Data, revision: Data, maximumByteCount: Int)
+    throws -> Data
+  {
+    try requireMatchingABI()
+    let owner = data.withUnsafeBytes { bytes in
+      revision.withUnsafeBytes { token in
+        preset_documents_replace_approved(
+          bytes.bindMemory(to: UInt8.self).baseAddress, bytes.count,
+          token.bindMemory(to: UInt8.self).baseAddress, token.count, maximumByteCount)
+      }
+    }
+    return try consume(owner)
+  }
+
+  private static func requireMatchingABI() throws {
+    guard preset_documents_abi_version() == PRESET_DOCUMENTS_ABI_VERSION else {
+      throw PresetDocumentError.nativeFailure
+    }
   }
 
   static func consume(_ owner: OpaquePointer?) throws -> Data {

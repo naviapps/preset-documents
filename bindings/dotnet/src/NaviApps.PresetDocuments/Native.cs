@@ -14,6 +14,9 @@ internal static partial class Native
     [LibraryImport(Library, EntryPoint = "preset_documents_process")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     private static unsafe partial IntPtr Process(uint operation, byte* data, nuint size, byte* options, nuint optionsSize);
+    [LibraryImport(Library, EntryPoint = "preset_documents_replace_approved")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    private static unsafe partial IntPtr ReplaceApproved(byte* data, nuint size, byte* revision, nuint revisionSize, nuint maximumByteCount);
     [LibraryImport(Library, EntryPoint = "preset_documents_buffer_data")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     private static partial IntPtr Data(IntPtr owner, out nuint size, out uint status);
@@ -23,12 +26,31 @@ internal static partial class Native
 
     internal static unsafe byte[] Call(uint operation, ReadOnlySpan<byte> data, object? options = null)
     {
-        if (AbiVersion() != 1) throw new InvalidOperationException("Native preset ABI mismatch.");
+        RequireMatchingAbi();
         var config = options is null ? Array.Empty<byte>() : JsonSerializer.SerializeToUtf8Bytes(options, Json);
         IntPtr owner;
         // The native call borrows the spans only until it returns.
         fixed (byte* input = data, configuration = config)
             owner = Process(operation, input, (nuint)data.Length, configuration, (nuint)config.Length);
+        return ReadResult(owner);
+    }
+
+    internal static unsafe byte[] ReplaceApproved(ReadOnlySpan<byte> data, ReadOnlySpan<byte> revision, int maximumByteCount)
+    {
+        RequireMatchingAbi();
+        IntPtr owner;
+        fixed (byte* input = data, token = revision)
+            owner = ReplaceApproved(input, (nuint)data.Length, token, (nuint)revision.Length, (nuint)maximumByteCount);
+        return ReadResult(owner);
+    }
+
+    private static void RequireMatchingAbi()
+    {
+        if (AbiVersion() != 2) throw new InvalidOperationException("Native preset ABI mismatch.");
+    }
+
+    private static byte[] ReadResult(IntPtr owner)
+    {
         if (owner == IntPtr.Zero) throw new InvalidOperationException("Missing native result.");
         try
         {

@@ -282,7 +282,7 @@ methods for collections. Both call the same Rust codec as
 explicit root. Payload JSON retains its number spelling, string escapes and
 internal whitespace. The host decides how to interpret or migrate it.
 
-The C result status distinguishes successful JSON results from typed error JSON.
+The C result status distinguishes successful bytes from typed error JSON.
 Copy a borrowed byte view before freeing its owner. Inputs must be readable for their
 lengths; null/size checks cannot establish arbitrary pointer validity. Do not free
 or mutate buffers concurrently. Allocation failure is not a recoverable contract.
@@ -299,6 +299,12 @@ timestamp text with no options and returns its canonical spelling, UTC whole
 seconds, nanoseconds, original offset in seconds and a flag for discarded
 nonzero subnanosecond digits. It requires the native artifact from the same
 revision as the bindings.
+
+C clients using ABI 2 pass the exact bytes from capture operation 8 to
+`preset_documents_replace_approved` alongside the replacement data and write limit.
+The captured revision identifies the destination. Keep it in memory for its
+approval flow. The legacy operation 9 continues to accept its original JSON
+arguments. The Swift and .NET bindings carry the revision as opaque bytes.
 
 ## Development and acceptance
 

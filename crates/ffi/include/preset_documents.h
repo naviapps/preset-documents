@@ -1,6 +1,6 @@
 #ifndef PRESET_DOCUMENTS_H
 #define PRESET_DOCUMENTS_H
-#define PRESET_DOCUMENTS_ABI_VERSION 1U
+#define PRESET_DOCUMENTS_ABI_VERSION 2U
 #include <stddef.h>
 #include <stdint.h>
 #ifdef __cplusplus
@@ -34,25 +34,26 @@ PresetDocumentsTimestampParts preset_documents_timestamp_parts(double seconds);
  * I/O. It requires a matching native library. Operations 6, 7 and 9 still
  * validate the actual submitted payload. */
 /* Approved replacement (local APFS on macOS only): operation 8 takes empty data
- * and {path:absoluteUTF8Path} options. Keep the returned opaque revision object
+ * and {path:absoluteUTF8Path} options. Keep the returned opaque revision bytes
  * unchanged for this approval flow; it is not a persistent lock or permission.
- * Operation 9 takes
- * replacement bytes and {path,maximumByteCount,revision} options; path must be
- * the same absolute UTF-8 path and maximumByteCount is in 1..64MiB.
+ * preset_documents_replace_approved takes the replacement and revision bytes
+ * separately. The revision supplies the destination path, and maximum_byte_count
+ * is in 1..64MiB. The legacy operation 9 remains available with replacement
+ * bytes and {path,maximumByteCount,revision} options, with the path required
+ * to match the captured path exactly.
  * A stale target observed by the precommit check reports destinationChanged
  * without attempting an exchange.
  * Unsupported platforms or volumes report approvedReplacementUnsupported.
  * This operation never falls back to creating an absent destination. It is not
  * an atomic compare-and-swap: a final concurrent substitution may be displaced.
- * Operation 9 success JSON is {state:"committed",recoveryDirectory,displacedIdentity}
+ * Replacement success JSON is {state:"committed",recoveryDirectory,displacedIdentity}
  * or {state:"commitUncertain",recoveryDirectory}. In the latter case, inspect the
  * destination and recovery directory; do not blindly retry. After a confirmed
  * exchange the directory retains the displaced entry named displaced-preset.
  * recoveryDirectory is its last observed path; the item is not an immutable copy.
  * displacedIdentity is matchesApprovedFile, different, or unverified. A match
  * identifies the object, not its exact pre-exchange content or revision.
- * The caller owns recovery handling; do not automatically discard the entry.
- * Operations 8 and 9 require a matching native library with ABI 1. */
+ * The caller owns recovery handling; do not automatically discard the entry. */
 /* Operation 1 validates a format. Operation 12 validates a portable format
  * JSON object with identifier, minimumSupportedVersion and currentVersion.
  * It rejects duplicate, unknown or missing fields and returns the canonical
@@ -91,6 +92,10 @@ PresetDocumentsTimestampParts preset_documents_timestamp_parts(double seconds);
 PresetDocumentsBuffer *preset_documents_process(uint32_t operation, const uint8_t *data,
                                                 size_t length, const uint8_t *options,
                                                 size_t options_length);
+PresetDocumentsBuffer *preset_documents_replace_approved(const uint8_t *data, size_t length,
+                                                         const uint8_t *revision,
+                                                         size_t revision_length,
+                                                         size_t maximum_byte_count);
 const uint8_t *preset_documents_buffer_data(const PresetDocumentsBuffer *owner, size_t *length,
                                             uint32_t *status);
 void preset_documents_buffer_free(PresetDocumentsBuffer *owner);

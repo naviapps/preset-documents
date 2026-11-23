@@ -28,7 +28,7 @@ static Result call(uint32_t operation, const char *data, const char *options) {
 
 int main(int argc, char **argv) {
     assert(argc == 2);
-    assert(preset_documents_abi_version() == 1);
+    assert(preset_documents_abi_version() == PRESET_DOCUMENTS_ABI_VERSION);
     Result timestamp = call(14, "1969-12-31t23:59:59.875z", NULL);
     assert(timestamp.status == 0);
     assert(strstr(timestamp.bytes, "\"canonical\":\"1969-12-31T23:59:59.875Z\"") != NULL);
