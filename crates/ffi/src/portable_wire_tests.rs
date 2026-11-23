@@ -1,9 +1,4 @@
-// Compile the exported implementation without adding an rlib to the SDK's
-// delivered cdylib/staticlib targets.
-#[path = "../src/lib.rs"]
-mod abi;
-
-use abi::{
+use super::{
     Buffer, preset_documents_buffer_data, preset_documents_buffer_free, preset_documents_process,
 };
 use preset_documents::MAXIMUM_BYTES;

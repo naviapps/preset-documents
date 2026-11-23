@@ -1083,19 +1083,23 @@ fn reads_an_actual_legacy_swift_presetkit_export() {
 
 #[test]
 fn invalid_recorded_identifiers_do_not_become_unbounded_mismatch_diagnostics() {
+    let format = format();
     for identifier in ["invalid/id".to_owned(), "a".repeat(1025)] {
         let input = std::str::from_utf8(DOCUMENT)
             .unwrap()
             .replace("com.example.presets", &identifier);
-        assert!(matches!(
-            decode(
-                input.as_bytes(),
-                Some(&format()),
-                &Limits::default(),
-                Root::Document
-            ),
-            Err(Error::InvalidDocument)
-        ));
+        for expected_format in [None, Some(&format)] {
+            assert_eq!(
+                decode(
+                    input.as_bytes(),
+                    expected_format,
+                    &Limits::default(),
+                    Root::Document
+                )
+                .unwrap_err(),
+                Error::InvalidDocument,
+            );
+        }
     }
 }
 

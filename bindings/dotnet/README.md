@@ -104,18 +104,11 @@ Run these commands from the SDK root after the
 C ownership and managed tests, including the clean NuGet consumer. It uses the
 tracked native library as the package asset.
 
-To run only the managed depth, Unicode, number preservation and byte-budget cases,
-restore the test project first, then select that source-matched native library:
+Run the full managed suite against the tracked macOS framework:
 
 ```sh
-mise exec -- dotnet restore bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj
-PRESET_DOCUMENTS_NATIVE_LIBRARY=/absolute/path/to/native/library \
-  mise exec -- dotnet run --no-restore \
-  --project bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj \
-  --configuration Release -- --depth-contracts
+mise exec -- make test-managed
 ```
-
-The ordinary managed acceptance entry point also runs these cases.
 
 ### Windows package acceptance
 

@@ -220,9 +220,8 @@ version ranges report `PresetDocumentError.invalidConfiguration`.
 
 ### Rust
 
-Rust consumers select the public `preset-documents` package from the private Git
-repository. The independent `preset-documents-file-io` package is optional.
-Use the same published full commit for both, replacing these placeholders:
+Rust consumers install `preset-documents` from the public Git repository.
+Add `preset-documents-file-io` for file APIs. Pin both packages to the same commit:
 
 ```toml
 [dependencies]
@@ -230,10 +229,7 @@ preset-documents = { git = "https://github.com/naviapps/preset-documents.git", r
 preset-documents-file-io = { git = "https://github.com/naviapps/preset-documents.git", rev = "FULL_40_CHARACTER_PUBLISHED_COMMIT_ID" }
 ```
 
-These packages are not published to crates.io. A normal client owns its
-`Cargo.lock`: the SDK workspace lock does not freeze the client's registry
-resolution. Git authentication belongs to the client's package delivery setup;
-neither Rust package invokes SDK developer tooling or builds a native framework.
+The client owns its `Cargo.lock` and resolves its registry dependencies.
 
 ### C
 
@@ -310,7 +306,7 @@ mise exec -- make check
 ```
 
 The tracked framework is ready for checks after a fresh clone. `make check` runs
-source lint, Rust Clippy and tests, the .NET depth fixture, strict Swift tests
+source lint, Rust Clippy and tests, the complete .NET suite, strict Swift tests
 and the standalone SwiftPM consumer. The lint and SwiftPM consumer commands use
 the public SDK Tooling CLI at the immutable revision in `mise.toml`. Mise and uv
 prepare it without a separate checkout or GitHub credentials.
@@ -357,7 +353,7 @@ framework, header and notices. The gate never rebuilds native artifacts.
 
 The producer must be clean and committed. A shallow checkout needs a complete
 verified `--git-source` repository or self-contained bundle; the driver does not
-fetch missing private history. For example, from the SDK root on an owned macOS
+fetch missing history. For example, from the SDK root on an owned macOS
 worker with mise-managed tools:
 
 ```sh

@@ -473,9 +473,7 @@ pub fn decode(
         }
         if let Some(format) = format {
             format.validate_version(&document.format_version)?;
-        } else if !valid_identifier(&document.format_version.identifier)
-            || document.format_version.version < 1
-        {
+        } else if document.format_version.version < 1 {
             return Err(Error::InvalidDocument);
         }
     }

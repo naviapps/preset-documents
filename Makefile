@@ -36,4 +36,4 @@ docs:
 
 test-managed:
 	PRESET_DOCUMENTS_NATIVE_LIBRARY="$(CURDIR)/Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/CPresetDocuments" \
-		dotnet run --configuration Release --project bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj -- --depth-contracts
+		dotnet run --configuration Release --project bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj

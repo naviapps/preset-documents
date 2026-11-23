@@ -54,6 +54,18 @@ public enum PresetDocumentFiles {
     let state: State
     let recoveryDirectory: String
     let displacedIdentity: PresetReplacementOutcome.DisplacedIdentity?
+
+    private enum CodingKeys: String, CodingKey {
+      case state, recoveryDirectory, displacedIdentity
+    }
+
+    init(from decoder: any Decoder) throws {
+      let fields = try decoder.container(keyedBy: CodingKeys.self)
+      state = try fields.decode(State.self, forKey: .state)
+      recoveryDirectory = try fields.decode(String.self, forKey: .recoveryDirectory)
+      displacedIdentity = try? fields.decode(
+        PresetReplacementOutcome.DisplacedIdentity.self, forKey: .displacedIdentity)
+    }
   }
 
   private static func localPath(_ url: URL) throws -> String {
@@ -77,22 +89,8 @@ public enum PresetDocumentFiles {
     -> Data
   {
     let options = try configuration(url, maximumByteCount: maximumByteCount)
-    try Task.checkCancellation()
-    let worker = Task.detached(priority: .userInitiated) {
-      try Task.checkCancellation()
-      return try PresetDocumentsNative.process(5, data: Data(), configuration: options)
-    }
-    return try await withTaskCancellationHandler {
-      do {
-        let bytes = try await worker.value
-        try Task.checkCancellation()
-        return bytes
-      } catch {
-        try Task.checkCancellation()
-        throw error
-      }
-    } onCancel: {
-      worker.cancel()
+    return try await observe {
+      try PresetDocumentsNative.process(5, data: Data(), configuration: options)
     }
   }
   /// Cancellation before dispatch prevents writing. Once replacement begins,
@@ -119,9 +117,7 @@ public enum PresetDocumentFiles {
   /// Use the result only for that approval. A cancellation discards any late observation.
   public static func captureReplacement(at url: URL) async throws -> PresetReplacementRevision {
     let options = try JSONEncoder().encode(PathOptions(path: localPath(url)))
-    try Task.checkCancellation()
-    let worker = Task.detached(priority: .userInitiated) {
-      try Task.checkCancellation()
+    return try await observe {
       let token = try PresetDocumentsNative.process(8, data: Data(), configuration: options)
       guard let object = try? JSONSerialization.jsonObject(with: token),
         object is [String: Any]
@@ -129,18 +125,6 @@ public enum PresetDocumentFiles {
         throw PresetDocumentError.nativeFailure
       }
       return PresetReplacementRevision(url: url, nativeJSON: token)
-    }
-    return try await withTaskCancellationHandler {
-      do {
-        let revision = try await worker.value
-        try Task.checkCancellation()
-        return revision
-      } catch {
-        try Task.checkCancellation()
-        throw error
-      }
-    } onCancel: {
-      worker.cancel()
     }
   }
 
@@ -154,16 +138,9 @@ public enum PresetDocumentFiles {
     maximumByteCount: Int = 64 * 1024 * 1024
   ) async throws -> PresetReplacementOutcome {
     let options = try replacementConfiguration(approval, maximumByteCount: maximumByteCount)
-    try Task.checkCancellation()
-    let worker = Task.detached(priority: .userInitiated) {
-      try Task.checkCancellation()
+    return try await dispatch {
       let result = try PresetDocumentsNative.process(9, data: data, configuration: options)
       return try replacementOutcome(from: result)
-    }
-    return try await withTaskCancellationHandler {
-      try await worker.value
-    } onCancel: {
-      worker.cancel()
     }
   }
 
@@ -180,7 +157,7 @@ public enum PresetDocumentFiles {
     return options
   }
 
-  private static func replacementOutcome(from data: Data) throws -> PresetReplacementOutcome {
+  static func replacementOutcome(from data: Data) throws -> PresetReplacementOutcome {
     guard let result = try? JSONDecoder().decode(ReplacementResult.self, from: data),
       result.recoveryDirectory.hasPrefix("/"), !result.recoveryDirectory.contains("\0")
     else { throw PresetDocumentError.nativeFailure }
@@ -188,7 +165,7 @@ public enum PresetDocumentFiles {
     switch result.state {
     case .committed:
       guard let displacedIdentity = result.displacedIdentity else {
-        // The recovery path is still useful even if the rest of the receipt is incomplete.
+        // The exchange may have displaced the preset even when its identity cannot be read.
         return .commitUncertain(recoveryDirectory: directory)
       }
       return .committed(recoveryDirectory: directory, displacedIdentity: displacedIdentity)
@@ -201,12 +178,33 @@ public enum PresetDocumentFiles {
     _ data: Data, to url: URL, maximumByteCount: Int, operation: UInt32
   ) async throws {
     let options = try configuration(url, maximumByteCount: maximumByteCount)
+    try await dispatch {
+      _ = try PresetDocumentsNative.process(operation, data: data, configuration: options)
+    }
+  }
+
+  private static func observe<Value: Sendable>(
+    _ operation: @escaping @Sendable () throws -> Value
+  ) async throws -> Value {
+    do {
+      let result = try await dispatch(operation)
+      try Task.checkCancellation()
+      return result
+    } catch {
+      try Task.checkCancellation()
+      throw error
+    }
+  }
+
+  private static func dispatch<Value: Sendable>(
+    _ operation: @escaping @Sendable () throws -> Value
+  ) async throws -> Value {
     try Task.checkCancellation()
     let worker = Task.detached(priority: .userInitiated) {
       try Task.checkCancellation()
-      _ = try PresetDocumentsNative.process(operation, data: data, configuration: options)
+      return try operation()
     }
-    try await withTaskCancellationHandler {
+    return try await withTaskCancellationHandler {
       try await worker.value
     } onCancel: {
       worker.cancel()

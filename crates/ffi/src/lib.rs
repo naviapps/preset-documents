@@ -320,6 +320,9 @@ pub unsafe extern "C" fn preset_documents_buffer_free(owner: *mut Buffer) {
 }
 
 #[cfg(test)]
+mod portable_wire_tests;
+
+#[cfg(test)]
 mod tests {
     use super::{Error, preset_documents_timestamp_parts, process};
 

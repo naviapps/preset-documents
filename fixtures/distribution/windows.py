@@ -21,27 +21,12 @@ RUNTIME = "win-x64"
 RECEIPT = "preset-documents-windows.json"
 
 
-def acceptance_source():
-    return load("windows_delivery").acceptance_source(ROOT)
-
-
-def publish_x64(package, receipt, *, output_dir, artifact_root, tooling):
-    load("windows_delivery").publish_x64(
-        package,
-        receipt,
-        receipt_name=RECEIPT,
-        output_dir=output_dir,
-        artifact_root=artifact_root,
-        tooling=tooling,
-    )
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--architecture", choices=("x64",), default="x64")
     parser.parse_args(argv)
-    source = acceptance_source()
-    support = support_inputs()
+    delivery = load("windows_delivery")
+    source = delivery.acceptance_source(ROOT)
+    support = support_inputs(ROOT)
     windows = load("windows")
     bindings = load("bindings")
     artifact_tooling = load("artifacts")
@@ -136,9 +121,9 @@ def main(argv=None):
             exclude_paths=(built,),
             consumer_runtime=RUNTIME,
         )
-        if source != acceptance_source():
+        if source != delivery.acceptance_source(ROOT):
             raise ValueError("Windows x64 acceptance source changed")
-        if support != support_inputs():
+        if support != support_inputs(ROOT):
             raise ValueError("Windows x64 acceptance support files changed")
         commit, fingerprint = source
         receipt = {
@@ -165,9 +150,10 @@ def main(argv=None):
             "dllSha256": hashlib.sha256(dll.read_bytes()).hexdigest(),
         }
         artifact_root = Path(env["NAVI_CI_ARTIFACTS"]) if env.get("NAVI_CI_ARTIFACTS") else None
-        publish_x64(
+        delivery.publish_x64(
             package,
             receipt,
+            receipt_name=RECEIPT,
             output_dir=output_dir,
             artifact_root=artifact_root,
             tooling=artifact_tooling,

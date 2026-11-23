@@ -4,8 +4,6 @@ using System.Text.Json.Serialization;
 using NaviApps.PresetDocuments;
 
 DepthContractTests.Run();
-if (args is ["--depth-contracts"]) return;
-
 PresetFormatJsonTests.Run();
 static void Require(bool value) { if (!value) throw new System.Diagnostics.UnreachableException("Preset contract failed."); }
 var format = new PresetFormat("com.example.presets");

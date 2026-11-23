@@ -1,8 +1,9 @@
 import Darwin
 import Foundation
 import PresetDocuments
-import PresetDocumentsFileIO
 import XCTest
+
+@testable import PresetDocumentsFileIO
 
 @MainActor
 final class PresetApprovedReplacementTests: XCTestCase {
@@ -100,6 +101,28 @@ final class PresetApprovedReplacementTests: XCTestCase {
       XCTFail("A nonlocal file URL must not capture a local destination.")
     } catch let error as PresetDocumentError {
       XCTAssertEqual(error, .invalidConfiguration)
+    }
+  }
+
+  func testIncompleteReplacementReceiptRetainsOnlyAValidRecoveryPath() async throws {
+    let directory = URL(fileURLWithPath: "/tmp/preset-recovery", isDirectory: true)
+    for (state, identity) in [
+      ("committed", #""newIdentity""#), ("committed", "17"), ("commitUncertain", "[]"),
+    ] {
+      let receipt =
+        #"{"state":"\#(state)","recoveryDirectory":"/tmp/preset-recovery","displacedIdentity":\#(identity)}"#
+      XCTAssertEqual(
+        try PresetDocumentFiles.replacementOutcome(from: Data(receipt.utf8)),
+        .commitUncertain(recoveryDirectory: directory), receipt)
+    }
+    for receipt in [
+      #"{"state":"unknown","recoveryDirectory":"/tmp/preset-recovery"}"#,
+      #"{"state":"committed","recoveryDirectory":"relative/path"}"#,
+      #"{"state":"commitUncertain","recoveryDirectory":"/tmp/embedded\u0000nul"}"#,
+    ] {
+      XCTAssertThrowsError(try PresetDocumentFiles.replacementOutcome(from: Data(receipt.utf8))) {
+        XCTAssertEqual($0 as? PresetDocumentError, .nativeFailure, receipt)
+      }
     }
   }
 

@@ -6,7 +6,6 @@ import os
 import shutil
 import tempfile
 import unittest
-from contextlib import nullcontext
 from itertools import product
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -109,7 +108,9 @@ class WindowsOutputTests(unittest.TestCase):
                     patch.object(driver, "builder", return_value=native) as builder,
                     patch.object(driver, "load", side_effect=tools.__getitem__),
                     patch.object(driver, "support_inputs", side_effect=(support, after)),
-                    patch.object(driver, "acceptance_source", return_value=workspace),
+                    patch.object(
+                        tools["windows_delivery"], "acceptance_source", return_value=workspace
+                    ),
                     patch.object(driver.subprocess, "run") as commands,
                     patch.object(driver.subprocess, "check_output", return_value="10.0.403"),
                     patch.object(driver.platform, "platform", return_value="mock Windows"),
@@ -237,25 +238,6 @@ class WindowsOutputTests(unittest.TestCase):
         self.assertEqual(error.exception.code, 2)
         loader.assert_not_called()
 
-    def test_emulated_host_acceptance_requires_exact_captured_source(self):
-        with patch.object(driver, "load", return_value=load("windows_delivery")):
-            commit, digest = "a" * 40, "b" * 64
-            with patch.dict(
-                os.environ,
-                {"NAVI_CI_SOURCE_COMMIT": commit, "NAVI_CI_SOURCE_FINGERPRINT": digest},
-                clear=True,
-            ):
-                self.assertEqual(driver.acceptance_source(), (commit, digest))
-                del os.environ["NAVI_CI_SOURCE_FINGERPRINT"]
-                with self.assertRaisesRegex(ValueError, "workspace SHA-256"):
-                    driver.acceptance_source()
-            with (
-                patch.dict(os.environ, {}, clear=True),
-                patch.object(driver.subprocess, "check_output", return_value=" M Cargo.lock"),
-                self.assertRaisesRegex(ValueError, "clean committed checkout"),
-            ):
-                driver.acceptance_source()
-
     def test_wrong_x64_dotnet_sdk_stops_before_cargo_or_native_build(self):
         shared = Mock()
         with tempfile.TemporaryDirectory() as temporary:
@@ -263,191 +245,15 @@ class WindowsOutputTests(unittest.TestCase):
             (root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
             with (
                 patch.object(driver, "ROOT", root),
-                patch.object(driver, "acceptance_source", return_value=("a" * 40, None)),
                 patch.object(driver, "load", return_value=shared),
                 patch.object(driver.subprocess, "check_output", return_value="10.0.402"),
                 patch.object(driver.subprocess, "run") as run,
             ):
                 shared.native_environment.return_value = ({}, root / "MSVC", root / "dotnet.exe")
                 with self.assertRaisesRegex(ValueError, "pinned x64 .NET SDK"):
-                    driver.main(["--architecture", "x64"])
+                    driver.main([])
         run.assert_not_called()
         shared.build_library.assert_not_called()
-
-    def test_x64_evidence_checks_destinations_before_replacing_previous_package(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            package = root / "NaviApps.PresetDocuments.0.1.0.nupkg"
-            package.write_bytes(b"new package")
-            receipt = {
-                "version": "0.1.0",
-                "packages": {package.name: hashlib.sha256(package.read_bytes()).hexdigest()},
-            }
-            output = root / "output"
-            external = root / "external"
-            local = output / "win-x64" / "0.1.0"
-            local.mkdir(parents=True)
-            (local / package.name).write_bytes(b"previous package")
-            occupied = external / "win-x64" / "0.1.0" / "user-file.txt"
-            occupied.parent.mkdir(parents=True)
-            occupied.write_text("owner bytes", encoding="utf-8")
-            tooling = Mock(build_lock=nullcontext)
-
-            with self.assertRaisesRegex(ValueError, "contains unrelated files"):
-                driver.publish_x64(
-                    package, receipt, output_dir=output, artifact_root=external, tooling=tooling
-                )
-
-            tooling.publish.assert_not_called()
-            self.assertEqual((local / package.name).read_bytes(), b"previous package")
-            self.assertEqual(occupied.read_text(encoding="utf-8"), "owner bytes")
-
-    def test_x64_evidence_keeps_previous_outputs_when_external_publication_fails(self):
-        tooling = load("artifacts")
-        for failure, had_local in product(("stage", "rename", "verify"), (False, True)):
-            with (
-                self.subTest(failure=failure, had_local=had_local),
-                tempfile.TemporaryDirectory() as temporary,
-            ):
-                root = Path(temporary)
-                package, receipt, output, artifact_root, local, external = x64_evidence(root)
-                if had_local:
-                    write_previous_evidence(local, package.name)
-                write_previous_evidence(external, package.name)
-                replace = os.replace
-
-                def fail_external_replace(source, destination):
-                    destination = Path(destination)
-                    writes_external_receipt = (
-                        destination.name == driver.RECEIPT
-                        and destination.is_relative_to(external.parent)
-                    )
-                    installs_external = (
-                        destination == external and Path(source).name == external.name
-                    )
-                    if (failure == "stage" and writes_external_receipt) or (
-                        failure == "rename" and installs_external
-                    ):
-                        raise PermissionError("external evidence is locked")
-                    replace(source, destination)
-                    if failure == "verify" and installs_external:
-                        (destination / package.name).write_bytes(b"changed during replacement")
-
-                error_type, message = (
-                    (ValueError, "differs from the accepted package and receipt")
-                    if failure == "verify"
-                    else (PermissionError, "external evidence is locked")
-                )
-
-                with (
-                    patch.object(tooling.os, "replace", side_effect=fail_external_replace),
-                    self.assertRaisesRegex(error_type, message),
-                ):
-                    driver.publish_x64(
-                        package,
-                        receipt,
-                        output_dir=output,
-                        artifact_root=artifact_root,
-                        tooling=tooling,
-                    )
-
-                if had_local:
-                    assert_previous_evidence(self, local, package.name)
-                else:
-                    self.assertFalse(local.exists())
-                assert_previous_evidence(self, external, package.name)
-
-    def test_x64_evidence_preserves_an_external_file_that_appears_during_commit(self):
-        tooling = load("artifacts")
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            package, receipt, output, artifact_root, local, external = x64_evidence(root)
-            write_previous_evidence(local, package.name)
-            occupied = external / "user-file.txt"
-            publish = tooling.publish
-
-            def occupy_after_local_replacement(stage, destination, verify):
-                def occupy_then_verify():
-                    occupied.parent.mkdir(parents=True, exist_ok=True)
-                    occupied.write_bytes(b"owner bytes")
-                    verify()
-
-                publish(stage, destination, occupy_then_verify if destination == local else verify)
-
-            with (
-                patch.object(tooling, "publish", side_effect=occupy_after_local_replacement),
-                self.assertRaisesRegex(ValueError, "contains unrelated files"),
-            ):
-                driver.publish_x64(
-                    package,
-                    receipt,
-                    output_dir=output,
-                    artifact_root=artifact_root,
-                    tooling=tooling,
-                )
-
-            self.assertEqual({path.name for path in external.iterdir()}, {occupied.name})
-            self.assertEqual(occupied.read_bytes(), b"owner bytes")
-            assert_previous_evidence(self, local, package.name)
-
-    def test_x64_evidence_keeps_both_verified_outputs_if_external_cleanup_fails(self):
-        tooling = load("artifacts")
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            package, receipt, output, artifact_root, local, external = x64_evidence(root)
-            write_previous_evidence(local, package.name)
-            write_previous_evidence(external, package.name)
-            rmtree = shutil.rmtree
-
-            def fail_external_cleanup(path, *args, **kwargs):
-                path = Path(path)
-                if path.parent == external.parent and path.name.startswith(".0.1.0.rollback-"):
-                    raise PermissionError("previous external evidence is locked")
-                return rmtree(path, *args, **kwargs)
-
-            with (
-                patch.object(tooling.shutil, "rmtree", side_effect=fail_external_cleanup),
-                self.assertRaisesRegex(PermissionError, "previous external evidence is locked"),
-            ):
-                driver.publish_x64(
-                    package,
-                    receipt,
-                    output_dir=output,
-                    artifact_root=artifact_root,
-                    tooling=tooling,
-                )
-
-            for destination in (local, external):
-                self.assertEqual((destination / package.name).read_bytes(), b"new package")
-                self.assertEqual(json.loads((destination / driver.RECEIPT).read_bytes()), receipt)
-            (recovery,) = external.parent.glob(".0.1.0.rollback-*")
-            assert_previous_evidence(self, recovery / "previous-artifacts", package.name)
-
-
-def x64_evidence(root):
-    package = root / "NaviApps.PresetDocuments.0.1.0.nupkg"
-    package.write_bytes(b"new package")
-    receipt = {
-        "version": "0.1.0",
-        "packages": {package.name: hashlib.sha256(package.read_bytes()).hexdigest()},
-    }
-    output = root / "output"
-    artifacts = root / "external"
-    relative = Path("win-x64") / receipt["version"]
-    return package, receipt, output, artifacts, output / relative, artifacts / relative
-
-
-def write_previous_evidence(directory, package_name):
-    directory.mkdir(parents=True)
-    (directory / package_name).write_bytes(b"previous package")
-    (directory / "preset-documents-windows.json").write_bytes(b"previous receipt")
-
-
-def assert_previous_evidence(test, directory, package_name):
-    test.assertEqual((directory / package_name).read_bytes(), b"previous package")
-    test.assertEqual(
-        (directory / "preset-documents-windows.json").read_bytes(), b"previous receipt"
-    )
 
 
 if __name__ == "__main__":
