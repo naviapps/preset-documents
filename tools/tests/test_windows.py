@@ -26,7 +26,7 @@ def load_driver():
     with patch.dict(
         sys.modules,
         {
-            "_tooling": SimpleNamespace(load=Mock(), support_inputs=Mock()),
+            "_tooling": SimpleNamespace(load=load, support_inputs=Mock()),
             "bindings": binding_driver,
             "native": SimpleNamespace(builder=Mock()),
         },
@@ -115,6 +115,7 @@ class WindowsOutputTests(unittest.TestCase):
                     "windows": shared,
                     "bindings": bindings,
                     "artifacts": artifact_tooling,
+                    "windows_delivery": load("windows_delivery"),
                 }
                 support = {"tools/vendor/sdk_tooling/windows.py": "b" * 64}
                 after = dict.fromkeys(support, "c" * 64) if error == "support" else support
@@ -260,22 +261,23 @@ class WindowsOutputTests(unittest.TestCase):
 
     def test_emulated_host_acceptance_requires_exact_captured_source(self):
         driver = load_driver()
-        commit, digest = "a" * 40, "b" * 64
-        with patch.dict(
-            os.environ,
-            {"NAVI_CI_SOURCE_COMMIT": commit, "NAVI_CI_SOURCE_FINGERPRINT": digest},
-            clear=True,
-        ):
-            self.assertEqual(driver.acceptance_source(), (commit, digest))
-            del os.environ["NAVI_CI_SOURCE_FINGERPRINT"]
-            with self.assertRaisesRegex(ValueError, "workspace SHA-256"):
+        with patch.object(driver, "load", return_value=load("windows_delivery")):
+            commit, digest = "a" * 40, "b" * 64
+            with patch.dict(
+                os.environ,
+                {"NAVI_CI_SOURCE_COMMIT": commit, "NAVI_CI_SOURCE_FINGERPRINT": digest},
+                clear=True,
+            ):
+                self.assertEqual(driver.acceptance_source(), (commit, digest))
+                del os.environ["NAVI_CI_SOURCE_FINGERPRINT"]
+                with self.assertRaisesRegex(ValueError, "workspace SHA-256"):
+                    driver.acceptance_source()
+            with (
+                patch.dict(os.environ, {}, clear=True),
+                patch.object(driver.subprocess, "check_output", return_value=" M Cargo.lock"),
+                self.assertRaisesRegex(ValueError, "clean committed checkout"),
+            ):
                 driver.acceptance_source()
-        with (
-            patch.dict(os.environ, {}, clear=True),
-            patch.object(driver.subprocess, "check_output", return_value=" M Cargo.lock"),
-            self.assertRaisesRegex(ValueError, "clean committed checkout"),
-        ):
-            driver.acceptance_source()
 
     def test_wrong_x64_dotnet_sdk_stops_before_cargo_or_native_build(self):
         driver = load_driver()

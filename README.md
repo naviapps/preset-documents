@@ -310,8 +310,10 @@ mise exec -- make check
 ```
 
 The tracked framework is ready for checks after a fresh clone. `make check` runs
-source lint, Rust Clippy and tests, strict Swift tests and the standalone SwiftPM
-consumer. It supports working edits and needs only this SDK checkout.
+source lint, Rust Clippy and tests, the .NET depth fixture, strict Swift tests
+and the standalone SwiftPM consumer. The lint and SwiftPM consumer commands use
+the public SDK Tooling CLI at the immutable revision in `mise.toml`. Mise and uv
+prepare it without a separate checkout or GitHub credentials.
 
 `make test-consumer` builds and runs the SDK-owned package in
 `fixtures/swift-consumer/` against only installable inputs. It imports both public products,
@@ -327,17 +329,17 @@ tests and exercises the .NET binding against a source-built DLL.
 ### Distribution checks
 
 For local distribution checks, set `NAVI_SDK_TOOLING_SOURCE` to the absolute
-path to a clean SDK Tooling checkout at the commit in
-`tools/tooling-sources.json`. Then run `mise exec -- make check-distribution`
-from a clean, committed SDK checkout. This checks the C and .NET bindings, the
-isolated NuGet consumer, the installed Rust and C clients, both DocC catalogs
-and the portable build-driver tests. The shared tools verify the tracked
-framework's source and output hashes and C exports. Reuse the same tooling
-checkout for `make native` after changing native inputs and for focused
-`make native-verify`, `make test-bindings`, `make test-tools` or `make docs`.
+path of a clean SDK Tooling checkout at the revision pinned in `mise.toml`.
+Run `mise exec -- make check-distribution` from a clean, committed SDK checkout.
+This checks the C and .NET bindings, the isolated NuGet consumer, the installed
+Rust and C clients, both DocC catalogs and the portable build-driver tests. The
+shared tools verify the tracked framework's source and output hashes and C exports.
+Reuse the same SDK Tooling checkout for direct native and packaging commands.
+Rebuild the native framework with `make native` after changing native inputs.
 
-Maintainers can run the macOS and Windows x64 distribution gates in the private
-SDK Tooling repository. Substitute the full SDK commit SHA on `main`:
+The public SDK Tooling repository runs the commands in this SDK's
+`sdk-distribution.toml` on macOS and Windows x64. Dispatch the workflow with
+the full SDK commit SHA on `main`:
 
 ```sh
 gh workflow run check-sdk-distribution.yml -R naviapps/sdk-tooling \
@@ -360,7 +362,7 @@ fetch missing private history. For example, from the SDK root on an owned macOS
 worker with mise-managed tools:
 
 ```sh
-mise exec -- python3 -B tools/install-consumers.py --revision FULL_40_CHARACTER_CURRENT_COMMIT_ID \
+mise run sdk-tooling -- installed-consumers --revision FULL_40_CHARACTER_CURRENT_COMMIT_ID \
   --git-source /absolute/verified/preset-documents.git \
   --evidence /absolute/owned-artifacts/preset-installed-consumers.json
 ```

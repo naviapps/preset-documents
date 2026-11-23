@@ -4,9 +4,9 @@ SWIFT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-error
 check: check-source test test-consumer
 
 check-source: lint test-rust test-managed
-check-distribution: lint test-tools test-rust test-bindings test-installed-consumers docs
+check-distribution: test-tools test-bindings test-installed-consumers docs
 lint:
-	mise exec -- python3 -B tools/quality.py check --dotnet
+	mise run lint
 native:
 	python3 tools/native.py
 native-verify:
@@ -14,9 +14,9 @@ native-verify:
 test:
 	swift test $(SWIFT_FLAGS)
 test-consumer:
-	python3 -B tools/consumer.py
+	mise run sdk-tooling -- swift-consumer
 test-installed-consumers:
-	python3 -B tools/install-consumers.py
+	mise run sdk-tooling -- installed-consumers
 test-tools:
 	python3 -B -m unittest discover -s tools/tests -v
 test-rust:
@@ -27,10 +27,10 @@ test-bindings:
 
 .PHONY: format
 format:
-	mise exec -- python3 -B tools/quality.py format --dotnet
+	mise run format
 
 docs:
-	python3 -B tools/docs.py
+	mise run sdk-tooling -- docs
 
 test-managed:
 	PRESET_DOCUMENTS_NATIVE_LIBRARY="$(CURDIR)/Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/CPresetDocuments" \
