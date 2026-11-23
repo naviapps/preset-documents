@@ -338,7 +338,7 @@ the full SDK commit SHA on `main`:
 
 ```sh
 gh workflow run check-sdk-distribution.yml -R naviapps/sdk-tooling \
-  -f sdk=preset-documents -f revision=FULL_SDK_COMMIT_SHA
+  -f sdk=preset-documents -f "revision=$(git rev-parse HEAD)"
 ```
 
 See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)

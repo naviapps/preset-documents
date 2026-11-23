@@ -24,15 +24,16 @@ RECEIPT = "preset-documents-windows.json"
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args(argv)
+    environment = {
+        key.upper(): value for key, value in os.environ.items() if key.upper() != "DOTNET_HOST_PATH"
+    }
+    artifact_root = load("vm_environment").artifacts_dir(environment)
     delivery = load("windows_delivery")
     source = delivery.acceptance_source(ROOT)
     support = support_inputs(ROOT)
     windows = load("windows")
     bindings = load("bindings")
     artifact_tooling = load("artifacts")
-    environment = {
-        key.upper(): value for key, value in os.environ.items() if key.upper() != "DOTNET_HOST_PATH"
-    }
     host = windows.host_architecture()
     env, tools, dotnet = windows.native_environment(host, environment, target_architecture="x64")
     env["RUSTUP_AUTO_INSTALL"] = "0"
@@ -149,7 +150,6 @@ def main(argv=None):
             "packages": {package.name: package_hash},
             "dllSha256": hashlib.sha256(dll.read_bytes()).hexdigest(),
         }
-        artifact_root = Path(env["NAVI_CI_ARTIFACTS"]) if env.get("NAVI_CI_ARTIFACTS") else None
         delivery.publish_x64(
             package,
             receipt,

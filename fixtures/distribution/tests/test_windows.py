@@ -47,7 +47,6 @@ class WindowsOutputTests(unittest.TestCase):
                 env = {
                     "CARGO_TARGET_DIR": str(redirected),
                     "PATH": "owned-toolchain",
-                    "NAVI_CI_ARTIFACTS": str(artifacts),
                 }
                 dotnet = root / "dotnet-x64/dotnet.exe"
                 native = Mock(version="0.1.0")
@@ -94,6 +93,7 @@ class WindowsOutputTests(unittest.TestCase):
                     "bindings": bindings,
                     "artifacts": artifact_tooling,
                     "windows_delivery": load("windows_delivery"),
+                    "vm_environment": load("vm_environment"),
                 }
                 support = {"@sdk-tooling/sdk_tooling/windows.py": "b" * 64}
                 after = dict.fromkeys(support, "c" * 64) if error == "support" else support
@@ -101,7 +101,11 @@ class WindowsOutputTests(unittest.TestCase):
                 with (
                     patch.dict(
                         os.environ,
-                        {"DOTNET_BIN": str(dotnet), "DOTNET_HOST_PATH": "stale ARM64 path"},
+                        {
+                            "DOTNET_BIN": str(dotnet),
+                            "DOTNET_HOST_PATH": "stale ARM64 path",
+                            "VM_RUNNER_ARTIFACTS_DIR": str(artifacts),
+                        },
                         clear=True,
                     ),
                     patch.object(driver, "ROOT", root),
@@ -140,7 +144,9 @@ class WindowsOutputTests(unittest.TestCase):
 
                 builder.assert_called_once_with(root)
                 shared.native_environment.assert_called_once_with(
-                    host, {"DOTNET_BIN": str(dotnet)}, target_architecture="x64"
+                    host,
+                    {"DOTNET_BIN": str(dotnet), "VM_RUNNER_ARTIFACTS_DIR": str(artifacts)},
+                    target_architecture="x64",
                 )
                 shared.build_library.assert_called_once_with(
                     native, env, root / "msvc", "x64", native_host=host
@@ -245,7 +251,11 @@ class WindowsOutputTests(unittest.TestCase):
             (root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
             with (
                 patch.object(driver, "ROOT", root),
-                patch.object(driver, "load", return_value=shared),
+                patch.object(
+                    driver,
+                    "load",
+                    side_effect=lambda name: load(name) if name == "vm_environment" else shared,
+                ),
                 patch.object(driver.subprocess, "check_output", return_value="10.0.402"),
                 patch.object(driver.subprocess, "run") as run,
             ):

@@ -135,7 +135,7 @@ SDK and shared build support files, the compiler host and target, the .NET
 SDK version, and whether the run used x64 emulation.
 
 The x64 package and its hash receipt go to
-`.native-build/win-x64/<version>` after the consumer passes. If `NAVI_CI_ARTIFACTS`
+`.native-build/win-x64/<version>` after the consumer passes. If `VM_RUNNER_ARTIFACTS_DIR`
 is set, the x64 package and receipt are also retained under `win-x64/<version>` in
 that directory. Both copies are staged before either is replaced. If the external
 replacement or verification fails, the driver restores the previous local output.
