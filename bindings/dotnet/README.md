@@ -8,7 +8,8 @@ Apple Silicon or Intel .NET. On Windows 11 use the `win-x64` variant with x64
 Windows packages have the same ID and version. Use separate local feeds and
 NuGet caches when restoring more than one variant.
 
-On macOS, `mise exec -- make test-bindings` verifies the tracked framework,
+With the [pinned tooling checkout](../../README.md#distribution-checks) configured on
+macOS, `mise exec -- make test-bindings` verifies the tracked framework,
 builds the universal package in `.native-build/macos/packages` and verifies it
 using a standalone .NET consumer. The packaged macOS dylib has its own ad hoc
 signature. On Windows, use the [package acceptance command](#windows-package-acceptance)
@@ -124,6 +125,8 @@ Visual Studio Build Tools with both ARM64 and x64 C++ components. Use the x64
 variant of the .NET SDK version in `mise.toml` so the managed fixtures and NuGet
 consumer can load the x64 DLL. The ARM64 and x64 .NET SDKs have separate
 [installation paths](https://learn.microsoft.com/en-us/dotnet/core/install/windows#arm-based-windows-pcs).
+Set `NAVI_SDK_TOOLING_SOURCE` to the absolute path of the clean checkout specified
+by the [distribution setup](../../README.md#distribution-checks).
 
 ```powershell
 $env:DOTNET_BIN = 'C:\Program Files\dotnet\x64\dotnet.exe'
@@ -136,7 +139,7 @@ the compiled C executable's machine and the native build's source receipt
 before running the fixtures. Both managed checks use the x64 .NET host. The
 clean package consumer restores `win-x64` from a temporary feed and checks the
 exact packaged DLL. The receipt records the source commit, the hashes of the
-build support files in this checkout, the compiler host and target, the .NET
+SDK and shared build support files, the compiler host and target, the .NET
 SDK version, and whether the run used x64 emulation.
 
 The x64 package and its hash receipt go to
@@ -149,9 +152,8 @@ both verified copies in place. Use a clean committed checkout or an exact VM
 Runner workspace capture to tie the receipt to the tested source. This is
 standalone SDK evidence.
 
-GitHub Actions uses a Windows x64 runner to build the package and run the
-installed package consumer. The local Windows command supports both x64 and
-ARM64 hosts.
+The maintainer's distribution workflow runs package acceptance on Windows x64.
+The local Windows command supports both x64 and ARM64 hosts.
 
 ## File I/O
 

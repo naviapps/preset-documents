@@ -1,7 +1,9 @@
 .DEFAULT_GOAL := check
 SWIFT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
-.PHONY: check check-distribution lint native native-verify test test-consumer test-installed-consumers test-rust test-tools test-bindings docs
-check: check-distribution test test-consumer
+.PHONY: check check-source test-managed check-distribution lint native native-verify test test-consumer test-installed-consumers test-rust test-tools test-bindings docs
+check: check-source test test-consumer
+
+check-source: lint test-rust test-managed
 check-distribution: lint test-tools test-rust test-bindings test-installed-consumers docs
 lint:
 	mise exec -- python3 -B tools/quality.py check --dotnet
@@ -29,3 +31,7 @@ format:
 
 docs:
 	python3 -B tools/docs.py
+
+test-managed:
+	PRESET_DOCUMENTS_NATIVE_LIBRARY="$(CURDIR)/Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/CPresetDocuments" \
+		dotnet run --configuration Release --project bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj -- --depth-contracts

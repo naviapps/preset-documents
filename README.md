@@ -297,12 +297,10 @@ Developer commands run from this checkout using the tools specified in
 
 Use Swift 6.3 or newer, macOS 26+, Rust 1.99.1 and .NET 10. Select tools per command without
 changing global configuration. Review `mise.toml` before trusting its scoped
-configuration. The complete `make check` gate requires a clean committed checkout
-because it includes independent installation from that exact Git revision.
+configuration.
 On a new checkout or after a lockfile change,
 run `cargo fetch --locked` with registry access before the offline Rust build
-and tests. Rebuild the native framework after native input changes;
-`tools/native.py --verify` checks source/output hashes and exports.
+and tests.
 
 ```sh
 mise trust mise.toml
@@ -311,18 +309,9 @@ mise exec -- cargo fetch --locked
 mise exec -- make check
 ```
 
-The tracked framework is ready for checks after a fresh clone. After changing
-native inputs, rebuild it with `mise exec -- make native`. Focused targets such
-as `test`, `test-rust`, `test-bindings` and `docs` can validate working edits;
-run the complete installation gate against the resulting clean committed snapshot.
-
-`make check` verifies the existing framework and runs Rust, Swift, C ownership,
-.NET fixtures, external Swift/Rust/C consumers, DocC and portable build-driver regressions. `make test-tools` runs only
-the portable driver checks. The C and managed fixtures load the accepted native
-library. A clean local NuGet consumer loads the packaged copy. Windows package
-execution is a separate gate.
-`mise exec -- make docs` checks both Swift API catalogs against this package's
-symbol graphs without running file operations.
+The tracked framework is ready for checks after a fresh clone. `make check` runs
+source lint, Rust Clippy and tests, strict Swift tests and the standalone SwiftPM
+consumer. It supports working edits and needs only this SDK checkout.
 
 `make test-consumer` builds and runs the SDK-owned package in
 `fixtures/swift-consumer/` against only installable inputs. It imports both public products,
@@ -330,6 +319,33 @@ round-trips a document through the native codec, and verifies create-only file
 publication and collision rejection in an owned temporary directory. It uses
 the tracked framework without rebuilding it and isolates the SwiftPM
 configuration and caches from the developer checkout.
+
+GitHub Actions runs the Swift tests and standalone SwiftPM consumer on macOS 26
+with Xcode 26.6 and on macOS 27 with Xcode 27.2. Public Windows x64 CI runs Rust
+tests and exercises the .NET binding against a source-built DLL.
+
+### Distribution checks
+
+For local distribution checks, set `NAVI_SDK_TOOLING_SOURCE` to the absolute
+path to a clean SDK Tooling checkout at the commit in
+`tools/tooling-sources.json`. Then run `mise exec -- make check-distribution`
+from a clean, committed SDK checkout. This checks the C and .NET bindings, the
+isolated NuGet consumer, the installed Rust and C clients, both DocC catalogs
+and the portable build-driver tests. The shared tools verify the tracked
+framework's source and output hashes and C exports. Reuse the same tooling
+checkout for `make native` after changing native inputs and for focused
+`make native-verify`, `make test-bindings`, `make test-tools` or `make docs`.
+
+Maintainers can run the macOS and Windows x64 distribution gates in the private
+SDK Tooling repository. Substitute the full SDK commit SHA on `main`:
+
+```sh
+gh workflow run check-sdk-distribution.yml -R naviapps/sdk-tooling \
+  -f sdk=preset-documents -f revision=FULL_SDK_COMMIT_SHA
+```
+
+See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
+for local x64 verification on Windows x64 or ARM64.
 
 `make test-installed-consumers` checks two other independent clients.
 Both exercise UInt64/Unicode codec
@@ -353,16 +369,8 @@ The external Rust client needs registry access for its initial fetch; the
 producer's Cargo cache does not fill the client's fresh cache. Choose a new
 `--evidence` path outside the checkout. `--language rust` or `--language c`
 selects one boundary. This is local-mirror installation evidence and does not
-test remote authentication or GitHub reachability. The macOS distribution job
-requests full history to run this gate.
-
-GitHub Actions runs strict Swift tests and the standalone SwiftPM consumer on
-macOS 26 with Xcode 26.6 and on macOS 27 with Xcode 27.2. The separate
-`make check-distribution` job runs once with Xcode 27.2 and covers checks such
-as native receipt verification, Rust/C clients, managed packages and DocC.
-The Windows x64 job runs Rust and tool tests and verifies the installed
-`win-x64` NuGet package. See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
-for local x64 verification on Windows x64 or ARM64.
+test remote authentication or GitHub reachability. The maintainer's macOS
+distribution job requests full history to run this gate.
 
 Original upstream notices and Rust runtime provenance remain under `ThirdParty/`.
 The shared macOS builder combines the notice bodies verbatim in
