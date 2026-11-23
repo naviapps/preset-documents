@@ -163,7 +163,8 @@ def main(argv=None):
     def run(*args):
         subprocess.run([str(a) for a in args], cwd=ROOT, env=env, check=True)
 
-    run("cargo", "fetch", "--locked", "--target", TARGET)
+    # The native build verifies retained notices for the macOS and Windows graphs.
+    run("cargo", "fetch", "--locked")
     run("cargo", "fmt", "--all", "--", "--check")
     built = windows.build_library(native, env, tools, "x64", native_host=host)
     run(
