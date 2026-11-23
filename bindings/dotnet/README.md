@@ -125,15 +125,9 @@ variant of the .NET SDK version in `mise.toml` so the managed fixtures and NuGet
 consumer can load the x64 DLL. The ARM64 and x64 .NET SDKs have separate
 [installation paths](https://learn.microsoft.com/en-us/dotnet/core/install/windows#arm-based-windows-pcs).
 
-Provide a clean local SDK Tooling checkout that supports the ARM64-hosted x64
-build, and the exact reviewed Git commit for that checkout.
-
 ```powershell
 $env:DOTNET_BIN = 'C:\Program Files\dotnet\x64\dotnet.exe'
-$tooling = 'C:\src\sdk-tooling'
-$revision = '<full SHA of the reviewed SDK Tooling commit>'
-mise exec -- python tools/windows.py --architecture x64 `
-  --tooling-source $tooling --tooling-revision $revision
+mise exec -- python -B tools/windows.py
 ```
 
 The driver checks the x64 .NET executable and SDK version before building.
@@ -141,9 +135,9 @@ ARM64-hosted MSVC links the x64 DLL and C fixture. It checks the DLL exports,
 the compiled C executable's machine and the native build's source receipt
 before running the fixtures. Both managed checks use the x64 .NET host. The
 clean package consumer restores `win-x64` from a temporary feed and checks the
-exact packaged DLL. The receipt records the source, tooling commit, compiler
-host and target, .NET SDK version, and x64 emulation. The repository's tooling
-pin continues to resolve the macOS and portable checks.
+exact packaged DLL. The receipt records the source commit, the hashes of the
+build support files in this checkout, the compiler host and target, the .NET
+SDK version, and whether the run used x64 emulation.
 
 The x64 package and its hash receipt go to
 `.native-build/win-x64/<version>` after the consumer passes. If `NAVI_CI_ARTIFACTS`
@@ -155,9 +149,9 @@ both verified copies in place. Use a clean committed checkout or an exact VM
 Runner workspace capture to tie the receipt to the tested source. This is
 standalone SDK evidence.
 
-GitHub Actions uses a Windows x64 runner. With the pinned tooling publicly
-accessible, the full gate also builds the package and runs the installed package
-consumer. The local Windows command supports both x64 and ARM64 hosts.
+GitHub Actions uses a Windows x64 runner to build the package and run the
+installed package consumer. The local Windows command supports both x64 and
+ARM64 hosts.
 
 ## File I/O
 

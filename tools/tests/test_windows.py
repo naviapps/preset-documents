@@ -1,4 +1,4 @@
-"""SDK acceptance consumes the shared builder's output, including redirected Cargo builds."""
+"""SDK acceptance consumes the native builder's output, including redirected Cargo builds."""
 
 import hashlib
 import importlib.util
@@ -26,7 +26,7 @@ def load_driver():
     with patch.dict(
         sys.modules,
         {
-            "_tooling": SimpleNamespace(load=Mock(), load_candidate=Mock()),
+            "_tooling": SimpleNamespace(load=Mock(), support_inputs=Mock()),
             "bindings": binding_driver,
             "native": SimpleNamespace(builder=Mock()),
         },
@@ -42,7 +42,9 @@ class WindowsOutputTests(unittest.TestCase):
         target = "x86_64-pc-windows-msvc"
         rid = "win-x64"
         hosts = {"arm64": "aarch64-pc-windows-msvc", "x64": target}
-        for host, error, stale in product(hosts, (None, "receipt", "C machine"), (False, True)):
+        for host, error, stale in product(
+            hosts, (None, "receipt", "C machine", "support"), (False, True)
+        ):
             with (
                 self.subTest(host=host, error=error, stale_legacy_output=stale),
                 tempfile.TemporaryDirectory() as temporary,
@@ -109,12 +111,13 @@ class WindowsOutputTests(unittest.TestCase):
                     return destination
 
                 bindings.stage_native.side_effect = stage_native
-                selected = {
+                tools = {
                     "windows": shared,
                     "bindings": bindings,
                     "artifacts": artifact_tooling,
-                }.get
-                tooling_commit = "b" * 40
+                }
+                support = {"tools/vendor/sdk_tooling/windows.py": "b" * 64}
+                after = dict.fromkeys(support, "c" * 64) if error == "support" else support
                 workspace = ("a" * 40, "a" * 64)
                 with (
                     patch.dict(
@@ -124,42 +127,37 @@ class WindowsOutputTests(unittest.TestCase):
                     ),
                     patch.object(driver, "ROOT", root),
                     patch.object(driver, "builder", return_value=native) as builder,
-                    patch.object(
-                        driver, "load_candidate", return_value=selected
-                    ) as candidate_loader,
+                    patch.object(driver, "load", side_effect=tools.__getitem__),
+                    patch.object(driver, "support_inputs", side_effect=(support, after)),
                     patch.object(driver, "acceptance_source", return_value=workspace),
                     patch.object(driver.subprocess, "run") as commands,
                     patch.object(driver.subprocess, "check_output", return_value="10.0.403"),
                     patch.object(driver.platform, "platform", return_value="mock Windows"),
                     patch("builtins.print"),
                 ):
-                    argv = [
-                        "--tooling-source",
-                        str(root / "tooling"),
-                        "--tooling-revision",
-                        tooling_commit,
-                    ]
                     if error:
-                        message = (
-                            "library differs from the selected host build"
-                            if error == "receipt"
-                            else "wrong C fixture machine"
-                        )
-                        with self.assertRaisesRegex(ValueError, message):
-                            driver.main(argv)
+                        messages = {
+                            "receipt": "library differs from the selected host build",
+                            "C machine": "wrong C fixture machine",
+                            "support": "acceptance support files changed",
+                        }
+                        with self.assertRaisesRegex(ValueError, messages[error]):
+                            driver.main([])
                         self.assertFalse(artifacts.exists())
-                        bindings.run_managed.assert_not_called()
-                        bindings.pack_project.assert_not_called()
-                        self.assertFalse(
-                            any(
-                                call.args[0][0].endswith(".exe") for call in commands.call_args_list
+                        self.assertFalse((root / ".native-build" / rid).exists())
+                        if error != "support":
+                            bindings.run_managed.assert_not_called()
+                            bindings.pack_project.assert_not_called()
+                            self.assertFalse(
+                                any(
+                                    call.args[0][0].endswith(".exe")
+                                    for call in commands.call_args_list
+                                )
                             )
-                        )
                         continue
-                    driver.main(argv)
+                    driver.main([])
 
-                candidate_loader.assert_called_once_with(root / "tooling", tooling_commit)
-                builder.assert_called_once_with(selected)
+                builder.assert_called_once_with()
                 shared.native_environment.assert_called_once_with(
                     host, {"DOTNET_BIN": str(dotnet)}, target_architecture="x64"
                 )
@@ -233,7 +231,7 @@ class WindowsOutputTests(unittest.TestCase):
                 execution = {"arm64": "x64-emulated-on-arm64", "x64": "x64-native"}
                 self.assertEqual(receipt["execution"], execution[host])
                 self.assertEqual(receipt["toolchain"], toolchain)
-                self.assertEqual(receipt["sdkToolingCommit"], tooling_commit)
+                self.assertEqual(receipt["toolInputs"], support)
                 self.assertEqual(receipt["dotnetVersion"], "10.0.403")
                 self.assertEqual((receipt["source"], receipt["workspaceFingerprint"]), workspace)
                 package = evidence / "NaviApps.PresetDocuments.0.1.0.nupkg"
@@ -253,12 +251,12 @@ class WindowsOutputTests(unittest.TestCase):
         driver = load_driver()
         with (
             patch("sys.stderr"),
-            patch.object(driver, "load_candidate") as load_candidate,
+            patch.object(driver, "load") as loader,
             self.assertRaises(SystemExit) as error,
         ):
             driver.main(["--architecture", "arm64"])
         self.assertEqual(error.exception.code, 2)
-        load_candidate.assert_not_called()
+        loader.assert_not_called()
 
     def test_emulated_host_acceptance_requires_exact_captured_source(self):
         driver = load_driver()
@@ -288,22 +286,13 @@ class WindowsOutputTests(unittest.TestCase):
             with (
                 patch.object(driver, "ROOT", root),
                 patch.object(driver, "acceptance_source", return_value=("a" * 40, None)),
-                patch.object(driver, "load_candidate", return_value=lambda name: shared),
+                patch.object(driver, "load", return_value=shared),
                 patch.object(driver.subprocess, "check_output", return_value="10.0.402"),
                 patch.object(driver.subprocess, "run") as run,
             ):
                 shared.native_environment.return_value = ({}, root / "MSVC", root / "dotnet.exe")
                 with self.assertRaisesRegex(ValueError, "pinned x64 .NET SDK"):
-                    driver.main(
-                        [
-                            "--architecture",
-                            "x64",
-                            "--tooling-source",
-                            str(root),
-                            "--tooling-revision",
-                            "b" * 40,
-                        ]
-                    )
+                    driver.main(["--architecture", "x64"])
         run.assert_not_called()
         shared.build_library.assert_not_called()
 

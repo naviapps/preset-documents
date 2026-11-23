@@ -14,7 +14,7 @@ import tomllib
 from contextlib import ExitStack
 from pathlib import Path
 
-from _tooling import load_candidate
+from _tooling import load, support_inputs
 from native import builder
 
 from bindings import pack_and_consume
@@ -135,18 +135,12 @@ def publish_x64(package, receipt, *, output_dir, artifact_root, tooling):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--architecture", choices=("x64",), default="x64")
-    parser.add_argument(
-        "--tooling-source", type=Path, required=True, help="Local reviewed SDK tooling checkout"
-    )
-    parser.add_argument(
-        "--tooling-revision", required=True, help="Exact Git commit of the local SDK tooling"
-    )
-    args = parser.parse_args(argv)
+    parser.parse_args(argv)
     source = acceptance_source()
-    selected = load_candidate(args.tooling_source, args.tooling_revision)
-    windows = selected("windows")
-    bindings = selected("bindings")
-    artifact_tooling = selected("artifacts")
+    support = support_inputs()
+    windows = load("windows")
+    bindings = load("bindings")
+    artifact_tooling = load("artifacts")
     environment = {
         key.upper(): value for key, value in os.environ.items() if key.upper() != "DOTNET_HOST_PATH"
     }
@@ -158,7 +152,7 @@ def main(argv=None):
     ).strip()
     if dotnet_version != tomllib.loads((ROOT / "mise.toml").read_text())["tools"]["dotnet"]:
         raise ValueError("Use the pinned x64 .NET SDK version from mise.toml")
-    native = builder(selected)
+    native = builder()
 
     def run(*args):
         subprocess.run([str(a) for a in args], cwd=ROOT, env=env, check=True)
@@ -240,6 +234,8 @@ def main(argv=None):
         )
         if source != acceptance_source():
             raise ValueError("Windows x64 acceptance source changed")
+        if support != support_inputs():
+            raise ValueError("Windows x64 acceptance support files changed")
         commit, fingerprint = source
         receipt = {
             "source": commit,
@@ -250,7 +246,7 @@ def main(argv=None):
             "exports": sorted(expected),
             "version": native.version,
             "toolchain": toolchain,
-            "sdkToolingCommit": args.tooling_revision,
+            "toolInputs": support,
             "dotnetVersion": dotnet_version,
             "execution": "x64-emulated-on-arm64" if host == "arm64" else "x64-native",
             "run": env.get("GITHUB_RUN_ID"),

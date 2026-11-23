@@ -292,10 +292,8 @@ revision as the bindings.
 
 ## Development and acceptance
 
-Developer commands use the immutable `sdk-tooling` revision in
-`tools/tooling-sources.json`. See [shared developer setup](https://github.com/naviapps/sdk-tooling#readme)
-for verified caches, offline use and source overrides. Ordinary SwiftPM and NuGet
-consumers do not need that setup.
+Developer commands run from this checkout using the tools specified in
+`mise.toml` and `rust-toolchain.toml`.
 
 Use Swift 6.3 or newer, macOS 26+, Rust 1.99.1 and .NET 10. Select tools per command without
 changing global configuration. Review `mise.toml` before trusting its scoped
@@ -330,12 +328,11 @@ symbol graphs without running file operations.
 `fixtures/swift-consumer/` against only installable inputs. It imports both public products,
 round-trips a document through the native codec, and verifies create-only file
 publication and collision rejection in an owned temporary directory. It uses
-the tracked framework without rebuilding it. Shared
-[consumer verification](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#consumer-verification)
-defines staging, configuration/cache isolation, explicit Git/mirror policy and evidence limits.
+the tracked framework without rebuilding it and isolates the SwiftPM
+configuration and caches from the developer checkout.
 
-`make test-installed-consumers` checks two other independent clients through
-pinned shared SDK tooling. Both exercise UInt64/Unicode codec
+`make test-installed-consumers` checks two other independent clients.
+Both exercise UInt64/Unicode codec
 round-trips, typed invalid-document rejection and create-only collision behavior
 inside their own temporary directories. The Rust fixture uses this exact Git
 revision and owns a new `Cargo.lock`; the C fixture sees only the copied public
@@ -375,8 +372,8 @@ The shared macOS builder combines the notice bodies verbatim in
 
 `mise install` prepares pinned developer tools. Run `mise run lint` before builds
 or `mise run format` to format owned source. Compiler and native acceptance remain
-in the existing check targets. Shared policy comes from the pinned SDK tooling;
-vendored code, native artifacts and original notices are excluded.
+in the existing check targets. Vendored code, native artifacts and original
+notices are excluded.
 
 ## License
 
