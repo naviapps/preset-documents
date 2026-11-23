@@ -1,44 +1,23 @@
 """SDK acceptance consumes the native builder's output, including redirected Cargo builds."""
 
 import hashlib
-import importlib.util
 import json
 import os
 import shutil
-import sys
 import tempfile
 import unittest
 from contextlib import nullcontext
 from itertools import product
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from tools._tooling import load
+from sdk_tooling.adapters import load
 
-
-def load_driver():
-    tools = Path(__file__).resolve().parents[1]
-    spec = importlib.util.spec_from_file_location("preset_documents_windows", tools / "windows.py")
-    driver = importlib.util.module_from_spec(spec)
-    binding_spec = importlib.util.spec_from_file_location("bindings", tools / "bindings.py")
-    binding_driver = importlib.util.module_from_spec(binding_spec)
-    with patch.dict(
-        sys.modules,
-        {
-            "_tooling": SimpleNamespace(load=load, support_inputs=Mock()),
-            "bindings": binding_driver,
-            "native": SimpleNamespace(builder=Mock()),
-        },
-    ):
-        binding_spec.loader.exec_module(binding_driver)
-        spec.loader.exec_module(driver)
-    return driver
+from fixtures.distribution import windows as driver
 
 
 class WindowsOutputTests(unittest.TestCase):
     def test_redirected_x64_build_cannot_consume_missing_or_stale_legacy_output(self):
-        driver = load_driver()
         target = "x86_64-pc-windows-msvc"
         rid = "win-x64"
         hosts = {"arm64": "aarch64-pc-windows-msvc", "x64": target}
@@ -117,7 +96,7 @@ class WindowsOutputTests(unittest.TestCase):
                     "artifacts": artifact_tooling,
                     "windows_delivery": load("windows_delivery"),
                 }
-                support = {"tools/vendor/sdk_tooling/windows.py": "b" * 64}
+                support = {"@sdk-tooling/sdk_tooling/windows.py": "b" * 64}
                 after = dict.fromkeys(support, "c" * 64) if error == "support" else support
                 workspace = ("a" * 40, "a" * 64)
                 with (
@@ -158,7 +137,7 @@ class WindowsOutputTests(unittest.TestCase):
                         continue
                     driver.main([])
 
-                builder.assert_called_once_with()
+                builder.assert_called_once_with(root)
                 shared.native_environment.assert_called_once_with(
                     host, {"DOTNET_BIN": str(dotnet)}, target_architecture="x64"
                 )
@@ -249,7 +228,6 @@ class WindowsOutputTests(unittest.TestCase):
                 self.assertEqual(receipt["exports"], ["preset_documents_abi_version"])
 
     def test_rejects_arm64_target_instead_of_selecting_a_native_package(self):
-        driver = load_driver()
         with (
             patch("sys.stderr"),
             patch.object(driver, "load") as loader,
@@ -260,7 +238,6 @@ class WindowsOutputTests(unittest.TestCase):
         loader.assert_not_called()
 
     def test_emulated_host_acceptance_requires_exact_captured_source(self):
-        driver = load_driver()
         with patch.object(driver, "load", return_value=load("windows_delivery")):
             commit, digest = "a" * 40, "b" * 64
             with patch.dict(
@@ -280,7 +257,6 @@ class WindowsOutputTests(unittest.TestCase):
                 driver.acceptance_source()
 
     def test_wrong_x64_dotnet_sdk_stops_before_cargo_or_native_build(self):
-        driver = load_driver()
         shared = Mock()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -299,7 +275,6 @@ class WindowsOutputTests(unittest.TestCase):
         shared.build_library.assert_not_called()
 
     def test_x64_evidence_checks_destinations_before_replacing_previous_package(self):
-        driver = load_driver()
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             package = root / "NaviApps.PresetDocuments.0.1.0.nupkg"
@@ -328,7 +303,6 @@ class WindowsOutputTests(unittest.TestCase):
             self.assertEqual(occupied.read_text(encoding="utf-8"), "owner bytes")
 
     def test_x64_evidence_keeps_previous_outputs_when_external_publication_fails(self):
-        driver = load_driver()
         tooling = load("artifacts")
         for failure, had_local in product(("stage", "rename", "verify"), (False, True)):
             with (
@@ -384,7 +358,6 @@ class WindowsOutputTests(unittest.TestCase):
                 assert_previous_evidence(self, external, package.name)
 
     def test_x64_evidence_preserves_an_external_file_that_appears_during_commit(self):
-        driver = load_driver()
         tooling = load("artifacts")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -418,7 +391,6 @@ class WindowsOutputTests(unittest.TestCase):
             assert_previous_evidence(self, local, package.name)
 
     def test_x64_evidence_keeps_both_verified_outputs_if_external_cleanup_fails(self):
-        driver = load_driver()
         tooling = load("artifacts")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

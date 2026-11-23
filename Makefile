@@ -1,36 +1,38 @@
+SDK_TOOLING ?= mise run sdk-tooling --
+
 .DEFAULT_GOAL := check
 SWIFT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
-.PHONY: check check-source test-managed check-distribution lint native native-verify test test-consumer test-installed-consumers test-rust test-tools test-bindings docs
+.PHONY: check check-source test-managed check-distribution lint native native-verify test test-consumer test-installed-consumers test-rust test-distribution-fixtures test-bindings docs
 check: check-source test test-consumer
 
 check-source: lint test-rust test-managed
-check-distribution: test-tools test-bindings test-installed-consumers docs
+check-distribution: test-distribution-fixtures test-bindings test-installed-consumers docs
 lint:
-	mise run lint
+	$(SDK_TOOLING) quality check --dotnet
 native:
-	python3 tools/native.py
+	$(SDK_TOOLING) native
 native-verify:
-	python3 tools/native.py --verify
+	$(SDK_TOOLING) native --verify
 test:
 	swift test $(SWIFT_FLAGS)
 test-consumer:
-	mise run sdk-tooling -- swift-consumer
+	$(SDK_TOOLING) swift-consumer
 test-installed-consumers:
-	mise run sdk-tooling -- installed-consumers
-test-tools:
-	python3 -B -m unittest discover -s tools/tests -v
+	$(SDK_TOOLING) installed-consumers
+test-distribution-fixtures:
+	$(SDK_TOOLING) python -m unittest discover -s fixtures/distribution/tests -v
 test-rust:
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 	cargo test --workspace --locked --offline
 test-bindings:
-	python3 tools/bindings.py
+	$(SDK_TOOLING) python fixtures/distribution/bindings.py
 
 .PHONY: format
 format:
-	mise run format
+	$(SDK_TOOLING) quality format --dotnet
 
 docs:
-	mise run sdk-tooling -- docs
+	$(SDK_TOOLING) docs
 
 test-managed:
 	PRESET_DOCUMENTS_NATIVE_LIBRARY="$(CURDIR)/Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/CPresetDocuments" \

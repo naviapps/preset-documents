@@ -1,0 +1,4 @@
+[[artifacts]]
+id = "sdk"
+symbol_prefix = "preset_documents_"
+minimum_macos = "26.0"

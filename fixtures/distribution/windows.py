@@ -10,12 +10,12 @@ import tempfile
 import tomllib
 from pathlib import Path
 
-from _tooling import load, support_inputs
-from native import builder
+from sdk_tooling.adapters import load, support_inputs
+from sdk_tooling.native_plan import builder
 
-from bindings import pack_and_consume
+from fixtures.distribution.bindings import pack_and_consume
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 TARGET = "x86_64-pc-windows-msvc"
 RUNTIME = "win-x64"
 RECEIPT = "preset-documents-windows.json"
@@ -56,7 +56,7 @@ def main(argv=None):
     ).strip()
     if dotnet_version != tomllib.loads((ROOT / "mise.toml").read_text())["tools"]["dotnet"]:
         raise ValueError("Use the pinned x64 .NET SDK version from mise.toml")
-    native = builder()
+    native = builder(ROOT)
 
     def run(*args):
         subprocess.run([str(a) for a in args], cwd=ROOT, env=env, check=True)

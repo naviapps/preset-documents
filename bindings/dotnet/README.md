@@ -8,8 +8,8 @@ Apple Silicon or Intel .NET. On Windows 11 use the `win-x64` variant with x64
 Windows packages have the same ID and version. Use separate local feeds and
 NuGet caches when restoring more than one variant.
 
-With the [pinned tooling checkout](../../README.md#distribution-checks) configured on
-macOS, `mise exec -- make test-bindings` verifies the tracked framework,
+On macOS, `mise exec -- make test-bindings` uses the
+[pinned SDK Tooling](../../README.md#distribution-checks) to verify the tracked framework,
 builds the universal package in `.native-build/macos/packages` and verifies it
 using a standalone .NET consumer. The packaged macOS dylib has its own ad hoc
 signature. On Windows, use the [package acceptance command](#windows-package-acceptance)
@@ -125,12 +125,11 @@ Visual Studio Build Tools with both ARM64 and x64 C++ components. Use the x64
 variant of the .NET SDK version in `mise.toml` so the managed fixtures and NuGet
 consumer can load the x64 DLL. The ARM64 and x64 .NET SDKs have separate
 [installation paths](https://learn.microsoft.com/en-us/dotnet/core/install/windows#arm-based-windows-pcs).
-Set `NAVI_SDK_TOOLING_SOURCE` to the absolute path of the clean checkout specified
-by the [distribution setup](../../README.md#distribution-checks).
+The command uses the public SDK Tooling revision pinned in `mise.toml`.
 
 ```powershell
 $env:DOTNET_BIN = 'C:\Program Files\dotnet\x64\dotnet.exe'
-mise exec -- python -B tools/windows.py
+mise run sdk-tooling -- python fixtures/distribution/windows.py
 ```
 
 The driver checks the x64 .NET executable and SDK version before building.

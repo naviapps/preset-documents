@@ -7,10 +7,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from _tooling import load
-from native import builder
+from sdk_tooling.adapters import load
+from sdk_tooling.native_plan import builder
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = "NaviApps.PresetDocuments"
 
 
@@ -95,13 +95,13 @@ def pack_and_consume(
 
 def main():
     if sys.platform != "darwin":
-        raise SystemExit("Use tools/windows.py in the owned Windows worker")
+        raise SystemExit("Run fixtures/distribution/windows.py in the owned Windows worker")
     dotnet = os.environ.get("DOTNET_BIN") or shutil.which("dotnet")
     if not dotnet:
         raise SystemExit("Set DOTNET_BIN to the task's .NET 10 executable")
     output = ROOT / ".native-build" / "macos"
     output.mkdir(parents=True, exist_ok=True)
-    native = builder()
+    native = builder(ROOT)
     native.verify()
     framework_dir = native.artifact / "macos-arm64_x86_64"
     library = framework_dir / (native.module + ".framework") / native.module

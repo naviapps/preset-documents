@@ -6,7 +6,7 @@ Swift sources and tests live in `Sources/` and `Tests/`; Rust crates live in
 `crates/`, with C ABI tests in `crates/ffi/tests/c/`. .NET projects use
 `bindings/dotnet/src/<project>/` and `bindings/dotnet/tests/<project>/` with their
 existing project names. Shared document fixtures live in `fixtures/documents/`,
-developer tools in `tools/`, and tracked native frameworks in `Artifacts/`.
+distribution fixtures in `fixtures/distribution/`, and native frameworks in `Artifacts/`.
 
 ## Start here
 
@@ -328,14 +328,13 @@ tests and exercises the .NET binding against a source-built DLL.
 
 ### Distribution checks
 
-For local distribution checks, set `NAVI_SDK_TOOLING_SOURCE` to the absolute
-path of a clean SDK Tooling checkout at the revision pinned in `mise.toml`.
 Run `mise exec -- make check-distribution` from a clean, committed SDK checkout.
+Mise and uv select the public SDK Tooling revision pinned in `mise.toml`.
 This checks the C and .NET bindings, the isolated NuGet consumer, the installed
 Rust and C clients, both DocC catalogs and the portable build-driver tests. The
 shared tools verify the tracked framework's source and output hashes and C exports.
-Reuse the same SDK Tooling checkout for direct native and packaging commands.
-Rebuild the native framework with `make native` after changing native inputs.
+`native.toml` declares the framework build and its receipt inputs. Rebuild the
+framework with `mise exec -- make native` after changing native inputs.
 
 The public SDK Tooling repository runs the commands in this SDK's
 `sdk-distribution.toml` on macOS and Windows x64. Dispatch the workflow with
