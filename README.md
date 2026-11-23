@@ -356,12 +356,15 @@ The external Rust client needs registry access for its initial fetch; the
 producer's Cargo cache does not fill the client's fresh cache. Choose a new
 `--evidence` path outside the checkout. `--language rust` or `--language c`
 selects one boundary. This is local-mirror installation evidence and does not
-test remote authentication or GitHub reachability. The macOS workflow requests
-full history and runs this gate in its existing worker job.
+test remote authentication or GitHub reachability. The macOS distribution job
+requests full history to run this gate.
 
-GitHub Actions runs the full macOS SDK checks with Xcode 27, strict Swift tests
-with Xcode 26.6 on macOS 26, and Rust and tool tests on Windows x64. CI also exercises standalone Swift/Rust/C consumers,
-managed package tests and the installed `win-x64` NuGet package. See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
+GitHub Actions runs strict Swift tests and the standalone SwiftPM consumer on
+macOS 26 with Xcode 26.6 and on macOS 27 with Xcode 27.2. The separate
+`make check-distribution` job runs once with Xcode 27.2 and covers checks such
+as native receipt verification, Rust/C clients, managed packages and DocC.
+The Windows x64 job runs Rust and tool tests and verifies the installed
+`win-x64` NuGet package. See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
 for local x64 verification on Windows x64 or ARM64.
 
 Original upstream notices and Rust runtime provenance remain under `ThirdParty/`.
