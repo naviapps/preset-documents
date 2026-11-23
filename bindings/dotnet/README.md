@@ -100,6 +100,37 @@ codec, then normalize the envelope. The generic `Encode<T>`,
 `DecodeDocument<T>` and `DecodeDocuments<T>` helpers use System.Text.Json
 runtime reflection for their typed JSON contracts.
 
+For example, read a single preset whose payload is `{"name":"Example"}` using
+your application's source-generated metadata.
+
+```csharp
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using NaviApps.PresetDocuments;
+
+var format = new PresetFormat("com.example.presets");
+var limits = new PresetDocumentLimits();
+var bytes = await PresetDocumentFiles.ReadAsync(
+    Path.GetFullPath("example.preset"), limits.MaximumByteCount);
+var normalized = PresetJsonCodec.NormalizeDocumentEnvelope(bytes, format, limits);
+using var envelope = JsonDocument.Parse(normalized,
+    new JsonDocumentOptions { MaxDepth = limits.MaximumDepth });
+var payloadJson = new PresetPayloadJson(new JsonSerializerOptions
+{
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    MaxDepth = limits.MaximumDepth,
+});
+var payload = envelope.RootElement.GetProperty("payload")
+    .Deserialize(payloadJson.PresetPayload)
+    ?? throw new JsonException("Expected an object payload.");
+Console.WriteLine(payload.Name);
+
+internal sealed record PresetPayload(string Name);
+
+[JsonSerializable(typeof(PresetPayload))]
+internal sealed partial class PresetPayloadJson : JsonSerializerContext;
+```
+
 ## Maintainer checks
 
 Run these commands from the SDK root after the
