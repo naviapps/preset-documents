@@ -1,0 +1,22 @@
+[package]
+name = "preset-documents-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+resolver = "3"
+
+[dependencies]
+libfuzzer-sys = "0.4"
+preset-documents = { path = "../crates/core" }
+
+[[bin]]
+name = "documents"
+path = "fuzz_targets/documents.rs"
+test = false
+doc = false
+bench = false

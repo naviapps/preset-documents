@@ -342,6 +342,26 @@ GitHub Actions runs the Swift tests and standalone SwiftPM consumer on macOS 26
 with Xcode 26.6 and on macOS 27 with Xcode 27.2. Public Windows x64 CI runs Rust
 tests and exercises the .NET binding against a source-built DLL.
 
+### Fuzz the Rust codec
+
+The optional `documents` target exercises single and collection envelope
+normalization on arbitrary bytes. Its seeds cover saved UTF-16 and UTF-32,
+deeply nested JSON and exact numeric payloads. Successful normalization must
+preserve payload lexemes, stay within the output budget and be idempotent.
+Use the separate fuzz workspace on macOS or Linux for a bounded local run.
+
+```sh
+rustup toolchain install nightly-2026-11-23 --profile minimal
+cargo install cargo-fuzz --locked --version 0.13.2 --root fuzz/target/tools
+cargo +nightly-2026-11-23 fetch --locked --manifest-path fuzz/Cargo.toml
+mkdir -p fuzz/corpus/documents
+PATH="$PWD/fuzz/target/tools/bin:$PATH" cargo +nightly-2026-11-23 fuzz run documents \
+  fuzz/corpus/documents fuzz/seeds/documents -- -max_len=4096 -max_total_time=30
+```
+
+The fuzzer writes new inputs to the ignored `fuzz/corpus/documents/` directory.
+Add a focused stable Rust test when an input exposes a regression.
+
 ### Distribution checks
 
 Run `mise exec -- make check-distribution` from a clean, committed SDK checkout.
