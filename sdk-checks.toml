@@ -13,3 +13,7 @@ header = "preset_documents.h"
 [rust_c.c.options]
 path = "{owned}/c-consumer.preset"
 maximumByteCount = 4096
+
+[windows_bindings]
+packages = ["preset-documents-ffi"]
+projects = ["bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj"]

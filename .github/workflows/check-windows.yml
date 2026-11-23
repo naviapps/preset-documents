@@ -21,6 +21,4 @@ jobs:
           persist-credentials: false
       - uses: naviapps/sdk-tooling/.github/actions/test-rust-windows@main
         with:
-          managed-project: bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj
-          native-package: preset-documents-ffi
-          native-property: PresetDocumentsNativeLibrary
+          test-bindings: "true"
