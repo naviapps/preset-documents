@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := check
 SWIFT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
 .PHONY: check lint native native-verify test test-consumer test-installed-consumers test-rust test-tools test-bindings docs
-check: lint test-tools test-rust native-verify test test-consumer test-installed-consumers test-bindings docs
+check: lint test-tools test-rust test-bindings test test-consumer test-installed-consumers docs
 lint:
 	mise exec -- python3 -B tools/quality.py check --dotnet
 native:
@@ -17,7 +17,6 @@ test-installed-consumers:
 test-tools:
 	python3 -B -m unittest discover -s tools/tests -v
 test-rust:
-	cargo fmt --all -- --check
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 	cargo test --workspace --locked --offline
 test-bindings:

@@ -11,9 +11,9 @@ NuGet caches when restoring more than one variant.
 On macOS, `mise exec -- make test-bindings` verifies the tracked framework,
 builds the universal package in `.native-build/macos/packages` and verifies it
 using a standalone .NET consumer. The packaged macOS dylib has its own ad hoc
-signature. On Windows, obtain the package and
-`preset-documents-windows.json` receipt from the private CI controller archive
-or an owned Windows build. Verify the Windows package SHA-256 against the receipt.
+signature. On Windows, use the [package acceptance command](#windows-package-acceptance)
+to build the package and its `preset-documents-windows.json` receipt locally.
+Verify the Windows package SHA-256 against the receipt.
 In a new consumer directory, replace the example path with your verified local feed:
 
 ```sh

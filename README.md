@@ -360,9 +360,8 @@ test remote authentication or GitHub reachability. The macOS workflow requests
 full history and runs this gate in its existing worker job.
 
 GitHub Actions runs Rust and strict Swift tests on Xcode 27 and Rust and tool
-tests on Windows x64. With publicly accessible tooling, the full gates add
-standalone Swift/Rust/C consumers, managed package tests and the installed
-`win-x64` NuGet package. See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
+tests on Windows x64. CI also exercises standalone Swift/Rust/C consumers,
+managed package tests and the installed `win-x64` NuGet package. See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
 for local x64 verification on Windows x64 or ARM64.
 
 Original upstream notices and Rust runtime provenance remain under `ThirdParty/`.
