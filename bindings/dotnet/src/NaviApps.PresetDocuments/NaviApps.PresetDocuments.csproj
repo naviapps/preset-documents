@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PackageId>NaviApps.PresetDocuments</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Rust-backed versioned preset documents, validation and portable JSON codecs.</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PublishRepositoryUrl>false</PublishRepositoryUrl>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../../../LICENSE" Pack="true" PackagePath="/" />
+    <None Include="$(PresetDocumentsNativeLibrary)" Condition="'$(PresetDocumentsNativeLibrary)' != ''" Pack="true" PackagePath="runtimes/$(PresetDocumentsRuntimeIdentifier)/native/%(Filename)%(Extension)" />
+    <None Include="../../../../README.md" Pack="true" PackagePath="/README.md" />
+    <None Include="../../../../ThirdParty/**/*" Exclude="../../../../ThirdParty/**/.DS_Store;../../../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
+  </ItemGroup>
+  <Target Name="RequirePresetDocumentsNativeLibrary" BeforeTargets="GenerateNuspec">
+    <Error Condition="'$(PresetDocumentsRuntimeIdentifier)' == '' or '$(PresetDocumentsNativeLibrary)' == ''" Text="Use tools/bindings.py or tools/windows.py with a source-matched native library." />
+    <Error Condition="'$(PresetDocumentsRuntimeIdentifier)' != 'osx' and '$(PresetDocumentsRuntimeIdentifier)' != 'win-x64'" Text="PresetDocuments package production supports osx and win-x64." />
+  </Target>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PathMap>$(MSBuildProjectDirectory)=/preset-documents/dotnet/$(MSBuildProjectName)</PathMap>
+  </PropertyGroup>
+</Project>

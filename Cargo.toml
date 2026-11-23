@@ -1,0 +1,22 @@
+[workspace]
+members = ["crates/core", "crates/ffi", "crates/file-io"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+repository = "https://github.com/naviapps/preset-documents"
+rust-version = "1.99"
+
+[workspace.dependencies]
+preset-documents = { path = "crates/core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+time = { version = "0.3.55", features = ["serde", "formatting", "parsing"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "none"

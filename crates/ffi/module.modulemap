@@ -1,0 +1,4 @@
+framework module CPresetDocuments {
+  header "preset_documents.h"
+  export *
+}

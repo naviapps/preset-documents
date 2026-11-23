@@ -1,0 +1,16 @@
+[package]
+name = "preset-documents-file-io"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+preset-documents.workspace = true
+serde.workspace = true
+tempfile = "3"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

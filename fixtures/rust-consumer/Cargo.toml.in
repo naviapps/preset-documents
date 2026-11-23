@@ -1,0 +1,13 @@
+[package]
+name = "preset-documents-git-consumer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# This client is independent of the SDK workspace. The producer supplies the
+# exact tested commit instead of committing a circular self-revision pin.
+[workspace]
+
+[dependencies]
+preset-documents = { git = "https://github.com/naviapps/preset-documents.git", rev = "@SDK_REVISION@" }
+preset-documents-file-io = { git = "https://github.com/naviapps/preset-documents.git", rev = "@SDK_REVISION@" }
