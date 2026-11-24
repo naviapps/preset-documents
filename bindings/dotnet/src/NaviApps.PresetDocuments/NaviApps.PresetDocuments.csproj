@@ -8,7 +8,7 @@
     <PackageId>NaviApps.PresetDocuments</PackageId>
     <Version>0.1.0</Version>
     <Description>Rust-backed versioned preset documents, validation and portable JSON codecs.</Description>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable Condition="'$(SdkNativeRuntimeAssets)' == ''">false</IsPackable>
