@@ -226,6 +226,10 @@ class WindowsOutputTests(unittest.TestCase):
                 )
                 self.assertEqual(bindings.pack_native.call_args.kwargs["runtimes"], (rid,))
                 self.assertEqual(
+                    bindings.pack_native.call_args.kwargs["package_files"]["README.md"],
+                    root / "bindings/dotnet/README.md",
+                )
+                self.assertEqual(
                     bindings.pack_native.call_args.kwargs["environment"]["DOTNET_BIN"],
                     str(dotnet),
                 )

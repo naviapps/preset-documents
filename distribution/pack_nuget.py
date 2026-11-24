@@ -17,7 +17,7 @@ MACOS_RUNTIMES = ("osx-arm64", "osx-x64")
 def pack(native, runtimes, *, environment=None):
     root = native.root
     nuget = load("nuget")
-    package_files = {"LICENSE": root / "LICENSE", "README.md": root / "README.md"}
+    package_files = {"LICENSE": root / "LICENSE", "README.md": root / "bindings/dotnet/README.md"}
     package_files.update(nuget.retained_notice_files(root / "ThirdParty", "licenses"))
     return nuget.pack_native(
         native,

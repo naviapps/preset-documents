@@ -11,14 +11,14 @@ package checks. The native frameworks live in `Artifacts/`.
 
 ## Start here
 
-- [Swift, Rust and C installation](#packages) and [the .NET guide](https://github.com/naviapps/preset-documents/blob/main/bindings/dotnet/README.md).
+- [Swift, Rust and C installation](#packages) and [the .NET guide](bindings/dotnet/README.md).
 - Swift API examples: [codec](#swift) and [file I/O](#optional-file-io).
 - [Maintainer setup and acceptance](#development-and-acceptance).
 
 Swift products require Swift 6.3 and macOS 26 or later. The tracked framework
 contains ARM64 and Intel slices. Rust uses the pinned 1.99.1 toolchain. The .NET 10
 NuGet package contains native assets for macOS ARM64, macOS x64, and Windows x64.
-See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
+See [Windows package acceptance](#windows-package-acceptance)
 for maintainer checks, including x64 emulation on Windows ARM64.
 
 ## Boundaries
@@ -265,7 +265,7 @@ using only the installed header and framework.
 `PresetJsonCodec`. NuGet installs the appropriate source-matched native asset
 from the combined macOS and Windows x64 package. The distribution workflow
 retains the verified package as a CI artifact.
-See [package installation, examples and managed checks](https://github.com/naviapps/preset-documents/blob/main/bindings/dotnet/README.md).
+See [package installation and .NET examples](bindings/dotnet/README.md).
 
 ### Shared native contract
 
@@ -371,6 +371,11 @@ shared tools verify the tracked framework's source and output hashes and C expor
 `native.toml` declares the framework build and its receipt inputs. Rebuild the
 framework with `mise exec -- make native` after changing native inputs.
 
+Run `mise exec -- make test-managed` for the .NET suite against the tracked macOS
+framework. `mise exec -- make test-bindings` also checks C ownership and tests the
+typed codec and reflection-disabled APIs in clean consumers of the macOS development
+package. That package and its receipt are written to `.native-build/packages`.
+
 The public SDK Tooling repository runs the commands in this SDK's
 `sdk-distribution.toml` on macOS and Windows x64. Dispatch the workflow with
 the full SDK commit SHA on `main`:
@@ -385,9 +390,6 @@ macOS native assets in one NuGet package. The macOS and Windows consumers
 restore the same package bytes. Download the `.nupkg` and `.nupkg.json` from the
 run's `preset-documents-nuget-…` artifact. Pass `-f windows-on-arm=true` to the
 dispatch command to also verify the x64 package on GitHub's Windows on Arm runner.
-
-See [Windows package acceptance](bindings/dotnet/README.md#windows-package-acceptance)
-for local x64 verification on Windows x64 or ARM64.
 
 `make test-installed-consumers` checks two other independent clients.
 Both exercise UInt64/Unicode codec
@@ -417,6 +419,30 @@ distribution job requests full history to run this gate.
 Original upstream notices and Rust runtime provenance remain under `ThirdParty/`.
 The shared macOS builder combines the notice bodies verbatim in
 `Resources/ThirdPartyNotices.txt`; NuGet packages retain the original notice files.
+
+#### Windows package acceptance
+
+Use an owned Windows 11 runner with Python, Rust, the
+`x86_64-pc-windows-msvc` target and Visual Studio Build Tools. On ARM64, use
+ARM64 Python and Rust and install both ARM64 and x64 C++ components. On either
+host, use the x64 .NET SDK version pinned in [`global.json`](global.json).
+On Windows ARM64, its default path is `C:\Program Files\dotnet\x64\dotnet.exe`.
+
+```powershell
+$env:DOTNET_BIN = 'C:\Program Files\dotnet\x64\dotnet.exe' # Set the x64 SDK path on this host.
+mise run sdk-tooling -- python distribution/verify_windows.py
+```
+
+The driver verifies x64 native exports, runs the C and .NET tests and restores
+the x64 development package into a fresh consumer. Its receipt records source,
+build inputs, compiler host and target, .NET SDK version and use of emulation.
+Use a clean committed checkout or an exact VM Runner workspace capture to tie
+the receipt to the tested source.
+
+The accepted package and receipt are written to `.native-build/win-x64/<version>`.
+Set `VM_RUNNER_ARTIFACTS_DIR` to retain them under `win-x64/<version>` there as well.
+The driver stages both copies before publishing and restores the previous local
+output if external publication or verification fails.
 
 ## Static checks
 

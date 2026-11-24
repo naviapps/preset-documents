@@ -23,7 +23,7 @@
       <Link Condition="'$(OS)' == 'Windows_NT'">preset_documents.dll</Link>
       <Link Condition="'$(OS)' != 'Windows_NT'">libpreset_documents.dylib</Link>
     </None>
-    <None Include="../../../../README.md" Pack="true" PackagePath="/README.md" />
+    <None Include="../../README.md" Pack="true" PackagePath="/README.md" />
     <None Include="../../../../ThirdParty/**/*" Exclude="../../../../ThirdParty/**/.DS_Store;../../../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
     <None Include="$(SdkNativeRuntimeAssets)/**/*" Condition="'$(SdkNativeRuntimeAssets)' != ''"
           Pack="true" PackagePath="runtimes/%(RecursiveDir)%(Filename)%(Extension)" />

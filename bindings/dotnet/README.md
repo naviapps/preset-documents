@@ -1,4 +1,7 @@
-# .NET document codec
+# PresetDocuments for .NET
+
+Read and write versioned preset documents through the shared Rust codec. Your
+application owns the payload schema and migrations.
 
 ## Installation and first use
 
@@ -7,15 +10,15 @@ The combined package targets .NET 10 and contains `osx-arm64`, `osx-x64`, and
 x64 .NET on Windows ARM64. NuGet chooses the asset for the .NET process or the
 runtime identifier selected at publish time.
 
-Download the package and its `.nupkg.json` receipt from the successful
-[SDK distribution run](../../README.md#distribution-checks) for your selected
-commit. Verify the package SHA-256 with the receipt before restoring from that
-directory. In a new consumer directory, restore into a fresh cache so older
-platform-only builds of the same version cannot satisfy the restore:
+Download the package and its `.nupkg.json` receipt from a successful
+[SDK distribution run](https://github.com/naviapps/preset-documents#distribution-checks).
+Verify the package SHA-256 with the receipt. Pin the version of the downloaded
+package and use a fresh cache to avoid reusing a platform-only build with the
+same version. From a new consumer directory, run:
 
 ```sh
 dotnet new console --framework net10.0 --no-restore
-dotnet add package NaviApps.PresetDocuments --version 0.1.0 --no-restore
+dotnet package add NaviApps.PresetDocuments --version "[0.1.0]" --no-restore
 dotnet restore --source "<package-directory>" --packages ./.packages
 ```
 
@@ -30,51 +33,26 @@ var restored = PresetJsonCodec.DecodeDocument<int>(bytes, format);
 Console.WriteLine(restored.Payload);
 ```
 
-Consumers need the package and its native asset, not Rust or the SDK's Python
-developer tools. See the [repository guide](https://github.com/naviapps/preset-documents#readme)
-for format, file semantics and maintainer prerequisites.
+The native codec ships with the package. See the
+[shared format and validation rules](https://github.com/naviapps/preset-documents#boundaries)
+for the supported encodings, version range and limits.
 
 ## Codec contract
 
-Persist all three `PresetFormat` properties when saving its JSON representation.
-A missing minimum or current version fails validation when loading it. C# callers
-can use the convenience constructor's defaults when creating a new format.
-For exchange with Swift, use `PresetFormat.ToJson()` and `PresetFormat.FromJson(data)`.
-These methods use Rust's UTF-8 format JSON object with camelCase keys. The reader
-rejects duplicate, missing and unknown fields before constructing the format.
+Use `PresetFormat.ToJson()` and `PresetFormat.FromJson(data)` to save or exchange
+format settings with Swift. The UTF-8 object contains `identifier`,
+`minimumSupportedVersion` and `currentVersion`. The reader requires all three
+fields and rejects duplicates and unknown fields. The C# constructor offers
+defaults when creating a new format.
 
-`PresetJsonCodec` passes `PresetDocumentLimits` to the shared Rust codec for both
-reads and writes. Depth includes the document envelope and, for collections, the
-outer array. Managed JSON processing follows the requested depth; it does not
-apply System.Text.Json's default depth of 64 or clamp a caller's configuration to
-a second list of supported limits. Before write serialization, the native
-validate-limits operation checks the configuration and returns validated limits
-on success. Invalid limits propagate as `invalidConfiguration` before payload
-converters or cyclic graphs are visited.
-For a typed collection, the binding reads `IReadOnlyList.Count` after validating
-limits. Rust checks that count before any payload converter runs.
-`TooManyDocuments` reports the full declared count. Rust also checks the
-collection that the serializer produces.
-Reads likewise enter Rust before managed payload parsing.
-
-On writes, the managed serializer allows one excess level so Rust can identify a
-depth violation. If serialization stops on a deeper graph, Rust checks the
-written prefix for a limit or configuration error. Otherwise the original host
-serialization exception is preserved. Cyclic graphs remain bounded.
-
-Rust independently checks original read bytes, the compact string spelling of
-completed typed writes, and normalized output. Completed typed writes use the
-same UTF-8 string escapes as Swift, including literal punctuation and
-supplementary Unicode characters. The original transport to Rust is capped at
-64 MiB and can use more bytes than the compact output. Failed managed writes
-still report the byte count of the written prefix when that prefix exceeds its
-input limit.
-The binding checks UTF-16 before writing string, character and `Uri` values
-or dictionary keys. An unpaired surrogate reports `InvalidDocument`. A literal
-replacement character or valid surrogate pair retains its value. Host
-converters own values they write directly, and Rust validates the resulting JSON.
-Payload numbers remain opaque, and a `JsonElement` payload retains integer and
-decimal tokens through the codec. Hosts still own their payload conversions.
+`PresetJsonCodec` uses `PresetDocumentLimits` for reads and writes. Depth covers
+the document envelope and the outer array for collections. Rust validates read
+input before managed payload conversion and checks write limits and collection
+counts before calling payload converters. Rust validation errors take precedence
+when they apply to a failed serialization. Otherwise the original serializer
+exception is preserved. A `JsonElement` payload retains integer and decimal
+tokens. An unpaired UTF-16 surrogate in a string, character, `Uri` or dictionary
+key reports `InvalidDocument`. Rust validates JSON written by custom converters.
 
 `PresetMetadata.CreatedAtRfc3339` exposes the creation time as RFC3339 text,
 including nanosecond fractions and dates or offsets outside .NET's range.
@@ -87,21 +65,33 @@ The Rust codec validates the text for projection and validates metadata again
 on encode. Assigning `CreatedAt` replaces or clears the stored timestamp,
 including any text read from an existing document.
 
-Use `PresetJsonCodec.NormalizeDocumentEnvelope(data, format, limits)` for a
-single document and `PresetJsonCodec.NormalizeDocumentEnvelopes(data, format, limits)`
-for a collection. Both validate the selected root and return UTF-8 JSON with
-normalized envelopes. Payload lexemes, including number spelling, string escapes
-and internal whitespace, remain exact. Hosts own payload conversion and migration.
+## Native AOT and reflection-disabled apps
 
-The portable format, envelope normalization, metadata timestamp projection and
-file APIs work when `JsonSerializerIsReflectionEnabledByDefault` is disabled.
-With reflection disabled, parse or write the opaque payload using your own
-codec, then normalize the envelope. The generic `Encode<T>`,
-`DecodeDocument<T>` and `DecodeDocuments<T>` helpers use System.Text.Json
-runtime reflection for their typed JSON contracts.
+The generic `Encode<T>`, `DecodeDocument<T>` and `DecodeDocuments<T>` helpers
+require System.Text.Json runtime reflection. For Native AOT or when
+`JsonSerializerIsReflectionEnabledByDefault` is disabled, use the format,
+metadata and file APIs with envelope normalization and supply your own payload
+codec, such as source-generated System.Text.Json metadata.
 
-For example, read a single preset whose payload is `{"name":"Example"}` using
-your application's source-generated metadata.
+`PresetJsonCodec.NormalizeDocumentEnvelope(data, format, limits)` validates a
+single document. Use `NormalizeDocumentEnvelopes` for a collection. Both return
+UTF-8 JSON with normalized envelopes and preserve the payload's number spelling,
+string escapes and internal whitespace. On writes, use your payload codec to
+construct the document JSON, then normalize it before saving.
+
+Save this preset as `example.preset` in the consumer directory:
+
+```json
+{
+  "formatVersion": { "identifier": "com.example.presets", "version": 1 },
+  "payload": { "name": "Example" }
+}
+```
+
+Replace `Program.cs` with the following and run
+`dotnet run --no-restore -p:JsonSerializerIsReflectionEnabledByDefault=false`.
+It reads the preset using the application's source-generated metadata and prints
+`Example`.
 
 ```csharp
 using System.Text.Json;
@@ -130,63 +120,6 @@ internal sealed record PresetPayload(string Name);
 [JsonSerializable(typeof(PresetPayload))]
 internal sealed partial class PresetPayloadJson : JsonSerializerContext;
 ```
-
-## Maintainer checks
-
-Run these commands from the SDK root after the
-[maintainer setup](https://github.com/naviapps/preset-documents#development-and-acceptance).
-`mise exec -- make test-bindings` verifies the tracked macOS framework and runs
-C ownership and managed tests, including clean NuGet consumers for the typed
-codec and for the reflection-disabled format, envelope and file APIs. The macOS
-development package and its receipt are written to `.native-build/packages`.
-The packer stages the verified framework slices as standalone dylibs with their
-own ad hoc signatures. Use this development package only on macOS.
-
-Run the full managed suite against the tracked macOS framework:
-
-```sh
-mise exec -- make test-managed
-```
-
-### Windows package acceptance
-
-To build and run the x64 SDK on an owned Windows 11 ARM64 worker, use native
-ARM64 Python and Rust, the Rust `x86_64-pc-windows-msvc` standard library, and
-Visual Studio Build Tools with both ARM64 and x64 C++ components. Use the x64
-variant of the .NET SDK version in [`global.json`](../../global.json) so the managed fixtures and NuGet
-consumer can load the x64 DLL. The ARM64 and x64 .NET SDKs have separate
-[installation paths](https://learn.microsoft.com/en-us/dotnet/core/install/windows#arm-based-windows-pcs).
-The command uses the public SDK Tooling revision pinned in `mise.toml`.
-
-```powershell
-$env:DOTNET_BIN = 'C:\Program Files\dotnet\x64\dotnet.exe'
-mise run sdk-tooling -- python distribution/verify_windows.py
-```
-
-The driver checks the x64 .NET executable and SDK version before building.
-ARM64-hosted MSVC links the x64 DLL and C fixture. It checks the DLL exports,
-the compiled C executable's machine and the native build's source receipt
-before running the fixtures. Both managed checks use the x64 .NET host. The
-clean package consumer restores `win-x64` from a temporary feed and checks the
-exact packaged DLL. The receipt records the source commit, the hashes of the
-SDK and shared build support files, the compiler host and target, the .NET
-SDK version, and whether the run used x64 emulation.
-
-The x64 package and its hash receipt go to
-`.native-build/win-x64/<version>` after the consumer passes. If `VM_RUNNER_ARTIFACTS_DIR`
-is set, the x64 package and receipt are also retained under `win-x64/<version>` in
-that directory. Both copies are staged before either is replaced. If the external
-replacement or verification fails, the driver restores the previous local output.
-If backup cleanup fails after verification, the command reports that error with
-both verified copies in place. Use a clean committed checkout or an exact VM
-Runner workspace capture to tie the receipt to the tested source. This is
-standalone SDK evidence.
-
-The maintainer's distribution workflow runs package acceptance on Windows x64.
-It combines this accepted native build with the macOS assets and reruns the
-consumer against the same combined package on each platform. The local Windows
-command supports both x64 and ARM64 hosts, and its development package is for
-Windows x64 only.
 
 ## File I/O
 
@@ -223,3 +156,6 @@ the previous item at `DisplacedPresetPath`; even a matching identity does not
 establish unchanged contents. Show `RecoveryDirectory` to the user and retain
 it when publication cannot be verified. Keep the actual result of an operation
 already dispatched when cancellation arrives.
+
+See the [shared file contract](https://github.com/naviapps/preset-documents#optional-file-io)
+for symlinks, Finder tags, cancellation and recovery behavior.
