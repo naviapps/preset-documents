@@ -9,6 +9,10 @@ use std::path::Path;
 
 const MAXIMUM_OPTIONS_BYTES: usize = 16 * 1024;
 
+/// Native ABI version returned by `preset_documents_abi_version`.
+pub const PRESET_DOCUMENTS_ABI_VERSION: u32 = 2u32;
+
+/// Owns the result bytes and their status. Release with `preset_documents_buffer_free`.
 pub struct Buffer {
     status: u32,
     bytes: Vec<u8>,
@@ -22,7 +26,9 @@ pub struct PresetDocumentsTimestampParts {
     pub fraction_length: u8,
 }
 
-/// Leaves calendar conversion to the host and returns the significant fractional digits.
+/// Parts retain the caller's epoch. Seconds are rounded to a nanosecond and carry
+/// to `whole_seconds` when needed. The ASCII fraction omits the decimal point and
+/// trailing zeros. Non-finite inputs are returned unchanged with no fraction.
 #[unsafe(no_mangle)]
 pub extern "C" fn preset_documents_timestamp_parts(seconds: f64) -> PresetDocumentsTimestampParts {
     let mut parts = PresetDocumentsTimestampParts {
@@ -98,7 +104,7 @@ fn replacement_path(value: &str) -> Result<&Path, Error> {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn preset_documents_abi_version() -> u32 {
-    2
+    PRESET_DOCUMENTS_ABI_VERSION
 }
 
 fn apply_replacement<'a>(
@@ -257,6 +263,65 @@ fn process<'a>(
     preset_documents::encode(&documents, &options.limits, options.root)
 }
 
+/// Dispatches a document, format, timestamp or file operation. Free each result
+/// owner once. Status 0 denotes successful result bytes and status 1 error JSON.
+///
+/// Operation 1 validates a format. Operation 12 validates a portable format JSON
+/// object with `identifier`, `minimumSupportedVersion` and `currentVersion`. It
+/// rejects duplicate, unknown or missing fields and returns canonical format JSON.
+/// Supply UTF-8 data and no options to operation 12.
+///
+/// Operation 2 validates documents against a required format and normalizes the
+/// envelopes to UTF-8 JSON. Payload number spelling, escapes and internal whitespace
+/// are preserved. Operation 3 writes documents. Both require an explicit `document`
+/// or `collection` root. Envelopes, `formatVersion` and non-null `metadata` must
+/// be JSON objects. Payload arrays are valid. Both operations enforce collection
+/// count limits before decoding the first excess element. `tooManyDocuments.documentCount`
+/// reports the limit plus one. Whole-input byte, Unicode/string and depth checks
+/// run first. Excess elements are left unvalidated once the count limit is reached.
+///
+/// Operation 4 returns the canonical validated `Limits` JSON from `data`. For
+/// operations 1 and 4, pass NULL and zero for options. Validate limits before
+/// invoking host payload encoders. Operation 13 checks limits and the full typed
+/// collection count before host encoding. Pass `{limits,documentCount}` as UTF-8
+/// data and no options. Success returns empty bytes. Saved JSON still goes through
+/// its normal validation. Operation 13 requires a matching native library.
+///
+/// Operation 11 writes completed UTF-8 JSON from a typed serializer. It takes
+/// the same options as operation 3 and compacts JSON string token escapes before
+/// applying `maximumByteCount`. Other payload lexemes are unchanged. The original
+/// transport has a separate 64 MiB dispatcher limit. Use a matching native library.
+///
+/// Operation 14 projects raw UTF-8 RFC3339 text with no options. Success returns
+/// `{canonical,unixSeconds,nanoseconds,offsetSeconds,hasSubnanosecondPrecision}`.
+/// `unixSeconds` is rounded toward negative infinity. The fraction is 0..999999999
+/// and the flag records discarded nonzero digits. Invalid timestamp text reports
+/// `invalidDocument`. Use a matching native library. The input text is unchanged.
+///
+/// Optional file operations 5, 6 and 7 take `{path,maximumByteCount}` options.
+/// Use an absolute UTF-8 path and a byte limit from 1 through 64 MiB. Operation 5
+/// reads bounded bytes with empty data. It follows symlinks to regular files,
+/// rejects Unix FIFOs without waiting for a writer and enforces the stream budget
+/// as the file grows. Operation 6 atomically writes with replacement and creates an
+/// initially absent destination exclusively. A concurrent creator reports `fileAccess`
+/// with kind `DestinationChanged`. Operation 7 creates without replacement and
+/// reports `destinationAlreadyExists` on collision. Both report `atomicNewUnsupported`
+/// when the platform or volume lacks exclusive creation for a new file. A successful
+/// write is committed. Parent directories are never created.
+///
+/// Operation 10 checks the write budget without file I/O. Pass empty data and
+/// `{byteCount,maximumByteCount}` options. It returns empty bytes on success and
+/// `outputTooLarge` when the budget is exceeded. Use a matching native library.
+/// Operations 6, 7 and 9 still validate the submitted payload.
+///
+/// Operation 8 captures a revision for approved replacement on local macOS APFS.
+/// Pass empty data and `{path}` options with an absolute UTF-8 path. Keep the
+/// opaque result bytes unchanged for the approval flow. They supply neither a
+/// persistent lock nor permission. Pass the revision to `preset_documents_replace_approved`.
+/// Legacy operation 9 takes replacement bytes and `{path,maximumByteCount,revision}`
+/// options. Its path must match the captured path exactly. See
+/// `preset_documents_replace_approved` for replacement outcomes and recovery.
+///
 /// # Safety
 /// Inputs must be readable for their lengths and remain unchanged during this
 /// call. Null is accepted only with zero length. Length checks cannot validate
@@ -292,7 +357,23 @@ pub unsafe extern "C" fn preset_documents_process(
     })
 }
 
-/// Replaces the exact path in the revision bytes returned by operation 8.
+/// Replaces the exact path in the revision bytes returned by operation 8. Pass a
+/// separate replacement payload and a `maximum_byte_count` from 1 through 64 MiB.
+///
+/// Approved replacement requires local macOS APFS. Other platforms and volumes
+/// report `approvedReplacementUnsupported`. A stale target observed by the
+/// precommit check reports `destinationChanged` before any exchange. This operation
+/// never creates an absent destination. A final concurrent substitution may be
+/// displaced because the revision check and entry exchange are separate operations.
+///
+/// Success is `{state:"committed",recoveryDirectory,displacedIdentity}` or
+/// `{state:"commitUncertain",recoveryDirectory}`. When commit is uncertain, inspect
+/// the destination and recovery directory before retrying. A confirmed exchange
+/// retains the displaced entry as `displaced-preset` in the recovery directory.
+/// `recoveryDirectory` gives its last observed path. The entry can still change.
+/// `displacedIdentity` is `matchesApprovedFile`, `different` or `unverified`. A
+/// match identifies the object only. The bytes may have changed after approval.
+/// The caller owns recovery handling. Do not automatically discard the entry.
 ///
 /// # Safety
 /// Inputs must be readable and unchanged for their lengths during this call.
@@ -346,6 +427,9 @@ fn owned_result(
     Box::into_raw(Box::new(buffer))
 }
 
+/// Returns a byte view borrowed from `owner`, with status 0 for success and 1 for error JSON.
+/// Returns null if any argument is null. Otherwise the view is valid until the owner is freed.
+///
 /// # Safety
 /// Owner must be live and originate from this SDK; output pointers must be
 /// writable. Copy bytes before freeing. Concurrent mutation/free is forbidden.

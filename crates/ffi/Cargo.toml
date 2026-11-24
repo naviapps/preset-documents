@@ -7,6 +7,10 @@ publish.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[package.metadata.c-bindings]
+module = "CPresetDocuments"
+umbrella = false
+
 [lib]
 name = "preset_documents"
 crate-type = ["cdylib"]

@@ -2,17 +2,21 @@ SDK_TOOLING ?= mise run sdk-tooling --
 
 .DEFAULT_GOAL := check
 SWIFT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
-.PHONY: check check-source test-managed check-distribution lint native native-verify test test-consumer test-installed-consumers test-rust test-distribution-tools test-bindings clean
+.PHONY: check check-source test-managed check-distribution lint native native-verify check-header generate-header test test-consumer test-installed-consumers test-rust test-distribution-tools test-bindings clean
 check: check-source test test-consumer
 
-check-source: lint test-rust test-managed
-check-distribution: test-distribution-tools test-bindings test-installed-consumers
+check-source: lint check-header test-rust test-managed
+check-distribution: check-header test-distribution-tools test-bindings test-installed-consumers
 lint:
 	$(SDK_TOOLING) quality check --dotnet
-native:
+native: generate-header
 	$(SDK_TOOLING) xcframework
-native-verify:
+native-verify: check-header
 	$(SDK_TOOLING) xcframework --verify
+check-header:
+	$(SDK_TOOLING) c-headers check
+generate-header:
+	$(SDK_TOOLING) c-headers generate
 test:
 	swift test $(SWIFT_FLAGS)
 test-consumer:

@@ -1966,7 +1966,7 @@
         },
         "inputs": {
           "Cargo.toml": "060c15baa5038fc07cbd5d0786a065707d6337616054164b93653044ca58c478",
-          "crates/ffi/Cargo.toml": "f42962a1b576b8f36642cae24706159b01b0eaa87f1f641fd3b70611af16d7c2"
+          "crates/ffi/Cargo.toml": "d179bb6f626fcf044916768896f90d80fd923efb77ab2b440437ebadf3392170"
         },
         "name": "preset-documents-ffi",
         "source": "workspace",
@@ -3228,7 +3228,7 @@
       "Cargo.lock": "e1b41c1daa0725f249c60a0f9d5d357d2c3d823a10993866d501ea2695a7a4f6",
       "Cargo.toml": "060c15baa5038fc07cbd5d0786a065707d6337616054164b93653044ca58c478",
       "crates/core/Cargo.toml": "3a61fc6674ef7792643a18e8a621bc01b29578cb5c3d31a2a3989a9f93ca9e6f",
-      "crates/ffi/Cargo.toml": "f42962a1b576b8f36642cae24706159b01b0eaa87f1f641fd3b70611af16d7c2",
+      "crates/ffi/Cargo.toml": "d179bb6f626fcf044916768896f90d80fd923efb77ab2b440437ebadf3392170",
       "crates/file-io/Cargo.toml": "f3a34406e48b526795c0dda11d8452ada601c6f71ffe780c7013ec846798e36c",
       "rust-toolchain.toml": "d13306be0ecda81ce779baa290ffb417380d525928477f16200884b5169cca33"
     }
@@ -3313,10 +3313,10 @@
     "ThirdParty/zmij-1.0.23/LICENSE-MIT": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
     "crates/core/Cargo.toml": "3a61fc6674ef7792643a18e8a621bc01b29578cb5c3d31a2a3989a9f93ca9e6f",
     "crates/core/src/lib.rs": "f1cf77ef5a6f8ec48042aa01c47df776801f0225e4a08e329f44334e058228fa",
-    "crates/ffi/Cargo.toml": "f42962a1b576b8f36642cae24706159b01b0eaa87f1f641fd3b70611af16d7c2",
-    "crates/ffi/include/preset_documents.h": "5cedc7cacb20c397df83fef09819e09cea67cea7324f7354e7094c546c54ab0a",
+    "crates/ffi/Cargo.toml": "d179bb6f626fcf044916768896f90d80fd923efb77ab2b440437ebadf3392170",
+    "crates/ffi/include/preset_documents.h": "86941eda6b518148e3752b9ed643ffc93e9d2d4fc4b373804a13e54873c033dc",
     "crates/ffi/module.modulemap": "31a7b1e68a9d975eecd934f16fd593e8283b991a8c665c23cc28ce222227073e",
-    "crates/ffi/src/lib.rs": "35f1d69e6490cc0e9b1af3b1225ebb4504b1c2203ebca01f59665fd557380419",
+    "crates/ffi/src/lib.rs": "5bab738436f48169e8a26ad670edbf0d1b7d03bcd2aeaae10323585d65bd2da8",
     "crates/file-io/Cargo.toml": "f3a34406e48b526795c0dda11d8452ada601c6f71ffe780c7013ec846798e36c",
     "crates/file-io/src/finder_tags.rs": "abafbb85bdcfb0bfc9bc2847ce7497c28f5a7e281973e44031af1a0c20b206cf",
     "crates/file-io/src/lib.rs": "6ee1e2b1c02910a55a648d63925e577044dae49f872aa488d21f1830177a69fa",
@@ -3333,12 +3333,12 @@
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Headers": "036ae9446c4f0c59046671d1d96e2de4f606b340d8a5c1927b2d51bc293e0365",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Modules": "278b6b2d8f8418e2e4877a67a109b6e3865174e4fa7405870a643e95cbc2f783",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Resources": "c213ee8e9c523538d862da3e5716b64bf090f6a1be08914954ae33cfbda7dbb2",
-    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/CPresetDocuments": "024746feaece2044ee2006d80c47a3be78ba9527275e646160e39d7d68351717",
-    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Headers/preset_documents.h": "5cedc7cacb20c397df83fef09819e09cea67cea7324f7354e7094c546c54ab0a",
+    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/CPresetDocuments": "31452a101b18876c2cbb71c301bb7f006c69d87742ac518574d5530aaeeb7b3d",
+    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Headers/preset_documents.h": "86941eda6b518148e3752b9ed643ffc93e9d2d4fc4b373804a13e54873c033dc",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Modules/module.modulemap": "31a7b1e68a9d975eecd934f16fd593e8283b991a8c665c23cc28ce222227073e",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Resources/Info.plist": "ffcfc2dd703924ed531ee18d8a87bb5217bdeba3199a45483e4443eecbc0c4ab",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Resources/ThirdPartyNotices.txt": "fd91af9711f1013213a65abfd225aa7c7243406f9a879d07d93f582817a949fa",
-    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/_CodeSignature/CodeResources": "c4dc3b99301adca0f9d0828a8f563e7b23f437326f4f417558f3c8078970d83e",
+    "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/_CodeSignature/CodeResources": "461a6f16512b40de2c0c79cc5ba1a0daf7a14b48b2d47011a7045d7fdb8c454a",
     "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/Current": "ee26006c07174064a7bed9b283a8b016d74a295e05c4e23a1846538d69b23c5f"
   },
   "productionSources": [
