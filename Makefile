@@ -9,7 +9,7 @@ check-source: lint check-header test-rust test-managed
 check-distribution: check-header test-distribution-tools test-bindings test-installed-consumers
 lint:
 	$(SDK_TOOLING) quality check --dotnet
-native: generate-header
+native:
 	$(SDK_TOOLING) xcframework
 native-verify: check-header
 	$(SDK_TOOLING) xcframework --verify

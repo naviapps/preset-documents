@@ -5,6 +5,7 @@ import argparse
 from pathlib import Path
 
 from sdk_tooling.adapters import load
+from sdk_tooling.c_headers import prepare_generated
 from sdk_tooling.native_plan import ffi_product
 from sdk_tooling.windows_delivery import RID
 from sdk_tooling.xcframework import xcframework
@@ -39,6 +40,7 @@ def main(argv=None):
         "--result", type=Path, help="Write the accepted package filename to a new file"
     )
     args = parser.parse_args(argv)
+    prepare_generated(ROOT)
     native = ffi_product(ROOT) if set(args.runtime) == {RID} else xcframework(ROOT)
     package = pack(native, args.runtime)
     if args.result is not None:

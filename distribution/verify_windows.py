@@ -10,6 +10,7 @@ from pathlib import Path
 
 from sdk_tooling import windows_delivery as delivery
 from sdk_tooling.adapters import load, support_inputs
+from sdk_tooling.c_headers import prepare_generated
 from sdk_tooling.native_plan import ffi_product
 from sdk_tooling.windows_delivery import RID, TARGET, X64Acceptance
 
@@ -54,6 +55,7 @@ def main(argv=None):
     windows = load("windows")
     artifact_tooling = load("artifacts")
     acceptance = X64Acceptance(ROOT)
+    prepare_generated(ROOT)
     native = ffi_product(ROOT)
 
     built = acceptance.build(native)

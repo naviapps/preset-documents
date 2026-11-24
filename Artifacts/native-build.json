@@ -1966,7 +1966,7 @@
         },
         "inputs": {
           "Cargo.toml": "060c15baa5038fc07cbd5d0786a065707d6337616054164b93653044ca58c478",
-          "crates/ffi/Cargo.toml": "d179bb6f626fcf044916768896f90d80fd923efb77ab2b440437ebadf3392170"
+          "crates/ffi/Cargo.toml": "59eebe0a4b6304c34466c41c75c8032382752fd22efdab9b74ef0a2958c3aba7"
         },
         "name": "preset-documents-ffi",
         "source": "workspace",
@@ -3228,7 +3228,7 @@
       "Cargo.lock": "e1b41c1daa0725f249c60a0f9d5d357d2c3d823a10993866d501ea2695a7a4f6",
       "Cargo.toml": "060c15baa5038fc07cbd5d0786a065707d6337616054164b93653044ca58c478",
       "crates/core/Cargo.toml": "3a61fc6674ef7792643a18e8a621bc01b29578cb5c3d31a2a3989a9f93ca9e6f",
-      "crates/ffi/Cargo.toml": "d179bb6f626fcf044916768896f90d80fd923efb77ab2b440437ebadf3392170",
+      "crates/ffi/Cargo.toml": "59eebe0a4b6304c34466c41c75c8032382752fd22efdab9b74ef0a2958c3aba7",
       "crates/file-io/Cargo.toml": "f3a34406e48b526795c0dda11d8452ada601c6f71ffe780c7013ec846798e36c",
       "rust-toolchain.toml": "d13306be0ecda81ce779baa290ffb417380d525928477f16200884b5169cca33"
     }
@@ -3313,7 +3313,7 @@
     "ThirdParty/zmij-1.0.23/LICENSE-MIT": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
     "crates/core/Cargo.toml": "3a61fc6674ef7792643a18e8a621bc01b29578cb5c3d31a2a3989a9f93ca9e6f",
     "crates/core/src/lib.rs": "f1cf77ef5a6f8ec48042aa01c47df776801f0225e4a08e329f44334e058228fa",
-    "crates/ffi/Cargo.toml": "d179bb6f626fcf044916768896f90d80fd923efb77ab2b440437ebadf3392170",
+    "crates/ffi/Cargo.toml": "59eebe0a4b6304c34466c41c75c8032382752fd22efdab9b74ef0a2958c3aba7",
     "crates/ffi/include/preset_documents.h": "86941eda6b518148e3752b9ed643ffc93e9d2d4fc4b373804a13e54873c033dc",
     "crates/ffi/module.modulemap": "31a7b1e68a9d975eecd934f16fd593e8283b991a8c665c23cc28ce222227073e",
     "crates/ffi/src/lib.rs": "5bab738436f48169e8a26ad670edbf0d1b7d03bcd2aeaae10323585d65bd2da8",

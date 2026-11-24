@@ -59,6 +59,8 @@ class WindowsOutputTests(unittest.TestCase):
                 }
                 dotnet = root / "dotnet-x64/dotnet.exe"
                 native = Mock(root=root, version="0.1.0", library="preset_documents")
+                generated_include = root / "crates/ffi/include"
+                generated_header = generated_include / "preset_documents.h"
                 shared = Mock()
                 shared.host_architecture.return_value = host
                 shared.MSVC_TARGETS = hosts
@@ -143,6 +145,7 @@ class WindowsOutputTests(unittest.TestCase):
                         clear=True,
                     ),
                     patch.object(driver, "ROOT", root),
+                    patch.object(driver, "prepare_generated") as generate,
                     patch.object(driver, "ffi_product", return_value=native) as builder,
                     patch.object(driver, "load", side_effect=tools.__getitem__),
                     patch.object(pack_nuget, "load", side_effect=tools.__getitem__),
@@ -183,6 +186,7 @@ class WindowsOutputTests(unittest.TestCase):
                     driver.main(["--export-native"])
 
                 builder.assert_called_once_with(root)
+                generate.assert_called_once_with(root)
                 shared.native_environment.assert_called_once_with(
                     host,
                     {"DOTNET_BIN": str(dotnet), "VM_RUNNER_ARTIFACTS_DIR": str(artifacts)},
@@ -205,9 +209,11 @@ class WindowsOutputTests(unittest.TestCase):
                 candidate = c["output"].parent
                 verified_library = candidate / library.name
                 self.assertEqual(shared.verify_library.call_args.args[0], verified_library)
+                self.assertEqual(shared.verify_library.call_args.args[1], [generated_header])
                 self.assertEqual(shared.verify_library.call_args.args[-1], "x64")
                 shared.require_pe_machine.assert_called_once_with(c["output"], "x64")
                 self.assertEqual(candidate.parent, root / ".native-build")
+                self.assertEqual(c["include_dirs"], [generated_include])
                 self.assertEqual(c["env"]["PATH"], "owned-toolchain")
                 staged_import = candidate / import_library.name
                 self.assertEqual(
