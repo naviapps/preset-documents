@@ -310,7 +310,7 @@ arguments. The Swift and .NET bindings carry the revision as opaque bytes.
 Developer commands run from this checkout using the tools specified in
 `mise.toml` and `rust-toolchain.toml`.
 
-Use Swift 6.3 or newer, macOS 26+, Rust 1.99.1 and .NET 10. Select tools per command without
+Use Swift 6.3 or newer, macOS 26+, the pinned Rust toolchain and .NET 10. Select tools per command without
 changing global configuration. Review `mise.toml` before trusting its scoped
 configuration.
 On a new checkout or after a lockfile change,
