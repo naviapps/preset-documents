@@ -25,9 +25,7 @@ def pack(native, runtimes, *, environment=None):
         project=root / "bindings/dotnet/src" / PACKAGE / (PACKAGE + ".csproj"),
         package_files=package_files,
         nuget_config=root / "bindings/dotnet/NuGet.Config",
-        input_files=[
-            root / name for name in ("distribution/pack_nuget.py", "native.toml", "mise.toml")
-        ],
+        input_files=[root / "distribution/pack_nuget.py", root / "mise.toml"],
         runtimes=runtimes,
         environment=environment,
     )

@@ -5,18 +5,17 @@ import os
 import shutil
 import subprocess
 import sys
-import tomllib
 
 from sdk_tooling.adapters import load
 from sdk_tooling.c_headers import prepare_generated
+from sdk_tooling.manifest import read_section
 from sdk_tooling.xcframework import xcframework
 
 from distribution.pack_nuget import MACOS_RUNTIMES, PACKAGE, ROOT, pack
 
 
 def consume(package, *, dotnet, version, root, env, output, exclude_paths, runtime=None):
-    with (root / "sdk-checks.toml").open("rb") as config:
-        fixtures = tomllib.load(config)["nuget"]["fixtures"]
+    fixtures = read_section(root, "checks")["nuget"]["fixtures"]
     nuget = load("nuget")
     for fixture in fixtures:
         nuget.run_isolated_consumer(

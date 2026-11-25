@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 
 from sdk_tooling import windows_delivery
 from sdk_tooling.adapters import load
+from sdk_tooling.manifest import MANIFEST
 
 from distribution import pack_nuget, verify_bindings
 from distribution import verify_windows as driver
@@ -44,7 +45,7 @@ class WindowsOutputTests(unittest.TestCase):
                 fixture.write_text("using NaviApps.PresetDocuments;", encoding="utf-8")
                 reflection_disabled = fixture.with_name("ReflectionDisabled.cs")
                 reflection_disabled.write_text("using System.Text.Json;", encoding="utf-8")
-                shutil.copyfile(driver.ROOT / "sdk-checks.toml", root / "sdk-checks.toml")
+                shutil.copyfile(driver.ROOT / MANIFEST, root / MANIFEST)
                 (root / "global.json").write_text(
                     '{"sdk":{"version":"10.0.403","rollForward":"disable"}}'
                 )

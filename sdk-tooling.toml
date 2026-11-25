@@ -1,27 +1,48 @@
-[swift]
+[[native.artifacts]]
+id = "sdk"
+symbol_prefix = "preset_documents_"
+minimum_macos = "26.0"
+
+[checks.swift]
 inputs = ["Package.swift", "Sources", "Tests", "Artifacts", "ThirdParty", "LICENSE"]
 executable = "PresetDocumentsConsumer"
 
-[rust_c]
+[checks.rust_c]
 git_url = "https://github.com/naviapps/preset-documents.git"
 rust_packages = ["preset-documents", "preset-documents-file-io"]
 
-[rust_c.c]
+[checks.rust_c.c]
 framework = "Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework"
 header = "preset_documents.h"
 
-[rust_c.c.options]
+[checks.rust_c.c.options]
 path = "{owned}/c-consumer.preset"
 maximumByteCount = 4096
 
-[windows_bindings]
+[checks.windows_bindings]
 packages = ["preset-documents-ffi"]
 projects = ["bindings/dotnet/tests/PresetDocuments.Tests/PresetDocuments.Tests.csproj"]
 
-[nuget]
+[checks.nuget]
 package_id = "NaviApps.PresetDocuments"
 fixtures = [
   "fixtures/consumers/dotnet/Program.cs",
   "fixtures/consumers/dotnet/ReflectionDisabled.cs",
 ]
 windows_x64 = true
+
+[distribution.macos]
+commands = [
+  ["cargo", "fetch", "--locked"],
+  ["make", "check-distribution"],
+]
+
+[distribution.windows]
+commands = [
+  ["rustup", "install", "--no-self-update"],
+  ["sdk-tooling", "python", "-m", "unittest", "discover", "-s", "distribution/tests"],
+  ["sdk-tooling", "windows", "distribution/verify_windows.py", "--export-native"],
+]
+
+[distribution.nuget]
+pack = "distribution/pack_nuget.py"

@@ -368,8 +368,9 @@ Mise and uv select the public SDK Tooling revision pinned in `mise.toml`.
 This checks the C and .NET bindings, the isolated NuGet consumer, the installed
 Rust and C clients, and the portable build-driver tests. The
 shared tools verify the tracked framework's source and output hashes and C exports.
-`native.toml` declares the framework build and its receipt inputs. Rebuild the
-framework with `mise exec -- make native` after changing native inputs.
+The `[native]` section of [`sdk-tooling.toml`](sdk-tooling.toml) declares the
+framework build and its receipt inputs. Rebuild the framework with
+`mise exec -- make native` after changing native inputs.
 The native build generates `crates/ffi/include/preset_documents.h` and
 `crates/ffi/module.modulemap` from the Rust FFI. Git ignores these local outputs.
 Run `mise exec -- make generate-header` to generate them separately.
@@ -381,9 +382,9 @@ framework. `mise exec -- make test-bindings` also checks C ownership and tests t
 typed codec and reflection-disabled APIs in clean consumers of the macOS development
 package. That package and its receipt are written to `.native-build/packages`.
 
-The public SDK Tooling repository runs the commands in this SDK's
-`sdk-distribution.toml` on macOS and Windows x64. Dispatch the workflow with
-the full SDK commit SHA on `main`:
+The public SDK Tooling repository runs the commands under `[distribution]` in
+[`sdk-tooling.toml`](sdk-tooling.toml) on macOS and Windows x64. Dispatch the
+workflow with the full SDK commit SHA on `main`:
 
 ```sh
 gh workflow run check-sdk-distribution.yml -R naviapps/sdk-tooling \
