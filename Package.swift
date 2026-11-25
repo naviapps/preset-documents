@@ -13,6 +13,7 @@ let package = Package(
     .target(name: "PresetDocuments", dependencies: ["CPresetDocuments"]),
     .target(name: "PresetDocumentsFileIO", dependencies: ["PresetDocuments"]),
     .testTarget(
-      name: "PresetDocumentsTests", dependencies: ["PresetDocuments", "PresetDocumentsFileIO"]),
+      name: "PresetDocumentsTests",
+      dependencies: ["CPresetDocuments", "PresetDocuments", "PresetDocumentsFileIO"]),
   ]
 )
