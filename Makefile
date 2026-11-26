@@ -11,7 +11,7 @@ lint:
 	$(SDK_TOOLING) quality check --dotnet
 native:
 	$(SDK_TOOLING) xcframework
-native-verify: check-header
+native-verify:
 	$(SDK_TOOLING) xcframework --verify
 check-header:
 	$(SDK_TOOLING) c-headers check

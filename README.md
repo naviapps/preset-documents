@@ -16,8 +16,9 @@ package checks. The native frameworks live in `Artifacts/`.
 - [Maintainer setup and acceptance](#development-and-acceptance).
 
 Swift products require Swift 6.3 and macOS 26 or later. The tracked framework
-contains ARM64 and Intel slices. Rust uses the pinned 1.99.1 toolchain. The .NET 10
-NuGet package contains native assets for macOS ARM64, macOS x64, and Windows x64.
+contains ARM64 and Intel slices. Native builds use the
+[pinned Rust toolchain](rust-toolchain.toml). The .NET 10 NuGet package contains
+native assets for macOS ARM64, macOS x64, and Windows x64.
 See [Windows package acceptance](#windows-package-acceptance)
 for maintainer checks, including x64 emulation on Windows ARM64.
 
@@ -288,22 +289,11 @@ or mutate buffers concurrently. Allocation failure is not a recoverable contract
 Swift result `Data` owns its bytes independently of later native calls or file changes.
 Its storage releases a transferred native buffer when it no longer needs the bytes;
 empty results release their native buffer immediately.
-The existing dispatcher also provides operation 4: supply serialized limits in
-`data`, with no options, to receive canonical validated limits JSON before encoding.
-Operation 7 creates a new file without replacement and uses the same file
-options as operations 5 and 6. It requires the native artifact from the same
-revision as the bindings. Operation 11 compacts string escapes in completed
-typed JSON using the same options as operation 3. Operation 14 takes UTF-8
-timestamp text with no options and returns its canonical spelling, UTC whole
-seconds, nanoseconds, original offset in seconds and a flag for discarded
-nonzero subnanosecond digits. It requires the native artifact from the same
-revision as the bindings.
 
-C clients using ABI 2 pass the exact bytes from capture operation 8 to
-`preset_documents_replace_approved` alongside the replacement data and write limit.
-The captured revision identifies the destination. Keep it in memory for its
-approval flow. The legacy operation 9 continues to accept its original JSON
-arguments. The Swift and .NET bindings carry the revision as opaque bytes.
+Use the native artifact from the same revision as the bindings. See the
+[shipped C header](Artifacts/CPresetDocuments.xcframework/macos-arm64_x86_64/CPresetDocuments.framework/Versions/A/Headers/preset_documents.h)
+for dispatcher options, approved replacement and the legacy JSON contract.
+Swift and .NET carry captured revisions as opaque bytes for the approval flow.
 
 ## Development and acceptance
 
