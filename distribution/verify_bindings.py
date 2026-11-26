@@ -7,7 +7,6 @@ import subprocess
 import sys
 
 from sdk_tooling.adapters import load
-from sdk_tooling.c_headers import prepare_generated
 from sdk_tooling.manifest import read_section
 from sdk_tooling.xcframework import xcframework
 
@@ -39,7 +38,6 @@ def main():
         raise SystemExit("Set DOTNET_BIN to the task's .NET 10 executable")
     output = ROOT / ".native-build" / "macos"
     output.mkdir(parents=True, exist_ok=True)
-    prepare_generated(ROOT)
     native = xcframework(ROOT)
     native.verify()
     framework_dir = native.artifact / "macos-arm64_x86_64"

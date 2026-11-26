@@ -330,6 +330,9 @@ and the standalone SwiftPM consumer. The lint and SwiftPM consumer commands use
 the public SDK Tooling CLI at the immutable revision in `mise.toml`. Mise and uv
 prepare it without a separate checkout or GitHub credentials.
 
+Run `mise exec -- make lint` or `mise exec -- make format` for source checks and formatting.
+These targets exclude vendored code, native artifacts and original notices.
+
 `make test-consumer` builds and runs the SDK-owned package in
 `fixtures/consumers/swift/` against only installable inputs. It imports both public products,
 round-trips a document through the native codec, and checks the write budget,
@@ -452,13 +455,6 @@ The accepted package and receipt are written to `.native-build/win-x64/<version>
 Set `VM_RUNNER_ARTIFACTS_DIR` to retain them under `win-x64/<version>` there as well.
 The driver stages both copies before publishing and restores the previous local
 output if external publication or verification fails.
-
-## Static checks
-
-`mise install` prepares pinned developer tools. Run `mise run lint` before builds
-or `mise run format` to format owned source. Compiler and native acceptance remain
-in the existing check targets. Vendored code, native artifacts and original
-notices are excluded.
 
 ## License
 
