@@ -4,7 +4,6 @@
 import argparse
 import json
 import platform
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -20,23 +19,6 @@ from distribution.verify_bindings import consume
 ROOT = Path(__file__).resolve().parents[1]
 RECEIPT = "preset-documents-windows.json"
 NATIVE_RECEIPT = "native-build.json"
-
-
-def export_native(built, inventory, artifact_root, tooling):
-    destination = artifact_root / "sdk-windows" / RID
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    if (
-        destination.exists()
-        or destination.is_symlink()
-        or not destination.parent.resolve().is_relative_to(artifact_root.resolve())
-    ):
-        raise ValueError("Windows native export requires a new directory inside the artifact root")
-    with tempfile.TemporaryDirectory(dir=destination.parent, prefix="native-export-") as temporary:
-        stage = Path(temporary) / RID
-        shutil.copytree(built, stage, symlinks=True)
-        if tooling.hashes(tooling.files(stage), stage) != inventory:
-            raise ValueError("Exported Windows native files differ from the accepted build")
-        stage.rename(destination)
 
 
 def main(argv=None):
@@ -154,11 +136,10 @@ def main(argv=None):
         )
         if args.export_native:
             with artifact_tooling.build_lock(output_dir):
-                export_native(
+                delivery.export_native(
                     built,
                     {**native_receipt["outputs"], NATIVE_RECEIPT: native_digest},
                     artifact_root,
-                    artifact_tooling,
                 )
     print(f"Windows x64 preset-documents acceptance passed on {acceptance.host}.")
 
