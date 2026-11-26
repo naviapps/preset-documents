@@ -41,7 +41,13 @@ commands = [
 commands = [
   ["rustup", "install", "--no-self-update"],
   ["sdk-tooling", "python", "-m", "unittest", "discover", "-s", "distribution/tests"],
-  ["sdk-tooling", "windows", "distribution/verify_windows.py", "--export-native"],
+  [
+    "sdk-tooling",
+    "windows",
+    "--driver-prepares-headers",
+    "distribution/verify_windows.py",
+    "--export-native",
+  ],
 ]
 
 [distribution.nuget]

@@ -330,8 +330,8 @@ create-only collision rejection, and approved replacement recovery on APFS in an
 owned temporary directory. It uses the tracked framework without rebuilding it
 and isolates the SwiftPM configuration and caches from the developer checkout.
 
-GitHub Actions runs the Swift tests and standalone SwiftPM consumer on macOS 26
-with Xcode 26.6 and on macOS 27 with Xcode 27.2. Public Windows x64 CI runs Rust
+The [SDK workflow](.github/workflows/check.yml) runs the Swift tests and
+standalone SwiftPM consumer on macOS 26 and 27. The Windows x64 job runs Rust
 tests and exercises the .NET binding against a source-built DLL.
 
 ### Fuzz the Rust codec
