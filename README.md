@@ -297,15 +297,10 @@ Swift and .NET carry captured revisions as opaque bytes for the approval flow.
 
 ## Development and acceptance
 
-Developer commands run from this checkout using the tools specified in
-`mise.toml` and `rust-toolchain.toml`.
-
-Use Swift 6.3 or newer, macOS 26+, the pinned Rust toolchain and .NET 10. Select tools per command without
-changing global configuration. Review `mise.toml` before trusting its scoped
-configuration.
-On a new checkout or after a lockfile change,
-run `cargo fetch --locked` with registry access before the offline Rust build
-and tests.
+Use Swift 6.3 or newer, macOS 26+, the [pinned Rust toolchain](rust-toolchain.toml)
+and .NET 10. Review [mise.toml](mise.toml) before trusting it. From the checkout,
+fetch the locked Cargo dependencies before the offline checks on a new checkout
+or after a lockfile change.
 
 ```sh
 mise trust mise.toml
@@ -357,7 +352,6 @@ Add a focused stable Rust test when an input exposes a regression.
 ### Distribution checks
 
 Run `mise exec -- make check-distribution` from a clean, committed SDK checkout.
-Mise and uv select the public SDK Tooling revision pinned in `mise.toml`.
 This checks the C and .NET bindings, the isolated NuGet consumer, the installed
 Rust and C clients, and the portable build-driver tests. The
 shared tools verify the tracked framework's source and output hashes and C exports.
